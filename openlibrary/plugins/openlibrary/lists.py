@@ -41,6 +41,9 @@ class lists_new(delegate.page):
 
 class lists(delegate.page):
     path = "(/(?:people|books|works|authors)/\w+)/lists"
+
+    def is_enabled(self):
+        return "lists" in web.ctx.features
     
     def GET(self, path):
         doc = web.ctx.site.get(path)
