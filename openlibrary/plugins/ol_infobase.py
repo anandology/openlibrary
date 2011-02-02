@@ -7,7 +7,7 @@ import urllib
 import simplejson
 
 import web
-from infogami.infobase import config, common, server, cache, dbstore
+from infogami.infobase import config, common, server, cache, dbstore, writequery
 
 # relative import
 from openlibrary import schema
@@ -32,6 +32,9 @@ def init_plugin():
         # install custom indexer
         #XXX-Anand: this might create some trouble. Commenting out.
         # ol.store.indexer = Indexer()
+        
+        # Install custom PermissionEngine
+        writequery.PermissionEngine = PermissionEngine
         
         if config.get('http_listeners'):
             ol.add_trigger(None, http_notify)
@@ -418,3 +421,46 @@ class Indexer(_Indexer):
         # avoid indexing table_of_contents.type etc.
         index = [(datatype, name, value) for datatype, name, value in index if not name.endswith('.type')]
         return index
+
+_PermissionEngine = writequery.PermissionEngine
+class PermissionEngine(_PermissionEngine):
+    """Custom Permission Engine for Open Library.
+    
+    The default permission engine uses permission field to check if a user has
+    permission to edit a document. Open Library requires a special permission
+    check in the following scenarios.
+    
+    * A list must be editable by its owner and all its collaborators.
+    """
+    def has_permission(self, author, key):
+        if self.is_list(key):
+            return self.has_permission_to_edit_list(author, key)
+        else:
+            return _PermissionEngine.has_permission(self, author, key)
+        
+    def is_list(self, key):
+        m = web.re_compile("^/people/[^/]*/lists/OL\d+L$").match(key)
+        return bool(m)
+        
+    def get_list_owner(self, list_key):
+        """Returns owner.key for the given list.
+        """
+        m = web.re_compile("^(/people/[^/]*)/lists/OL\d+L$").match(list_key)
+        if m:
+            return m.group(1)
+            
+    def get_list_writers(self, list):
+        """Returns the list of people who can edit the given list."""
+        data = list.format_data()
+        
+        yield self.get_list_owner(data['key'])
+        
+        collaborators = data.get("collaborators", [])
+        for c in collaborators:
+            yield c['key']
+    
+    def has_permission_to_edit_list(self, author, key):
+        """Returns True if the author can edit the list with given key.
+        """
+        flag = author and author.key in self.get_list_writers(self.get_thing(key))
+        return bool(flag)
