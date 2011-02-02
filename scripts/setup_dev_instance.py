@@ -444,39 +444,6 @@ class install_couchdb:
             
     def is_64_bit(self):
         return os.uname()[-1] == "x86_64"
-    
-class install_postgresql:
-    """Installs postgresql on Mac OS X.
-    Doesn't do anything on Linux.
-    """
-    def run(self):
-        distro = find_distro()
-        if distro == "osx":
-            self.install()
-        
-    def install(self):
-        info("installing postgresql..")
-        download_url = "http://www.archive.org/download/ol_vendor/postgresql-8.4.4-osx-binaries.tgz"
-        download_and_extract(download_url, dirname="postgresql-8.4.4")
-        system("cd usr/local/bin && ln -fs ../postgresql-8.4.4/bin/* .")
-        system("cd usr/local/lib && ln -fs ../postgresql-8.4.4/lib/* .")
-        
-        if not os.path.exists("var/lib/postgresql/base"):
-            system("usr/local/bin/initdb --no-locale var/lib/postgresql")
-        
-class start_postgresql:
-    def run(self):
-        distro = find_distro()
-        if distro == "osx":
-            self.start()
-        
-    def start(self):
-        info("starting postgresql..")
-        
-        pg = Postgres()
-        register_cleanup(pg.stop)
-        pg.start()
-        
         
 class setup_coverstore(DBTask):
     """Creates and initialized coverstore db."""
@@ -631,9 +598,6 @@ def main():
         install_couchdb(),
         install_solr(),
         install_couchdb_lucene(),
-        install_postgresql(),
-        
-        start_postgresql(),
         
         setup_coverstore(),
         setup_ol(),
