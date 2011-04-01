@@ -222,6 +222,7 @@ def radio_list(name, args, value):
 def get_coverstore_url():
     return config.get('coverstore_url', 'http://covers.openlibrary.org').rstrip('/')
     
+@cache.memoize(engine="memcache", key="_get_changes_v1_raw", expires=10*60)
 def _get_changes_v1_raw(query, revision=None):
     """Returns the raw versions response. 
     
@@ -237,8 +238,6 @@ def _get_changes_v1_raw(query, revision=None):
         v.author = v.author and v.author.key
     
     return versions
-
-_get_changes_v1_raw = cache.memcache_memoize(_get_changes_v1_raw, key_prefix="upstream._get_changes_v1_raw", timeout=10*60)
 
 def get_changes_v1(query, revision=None):
     # uses the cached function _get_changes_v1_raw to get the raw data
@@ -262,7 +261,6 @@ def _get_changes_v2_raw(query, revision=None):
     changes = web.ctx.site.recentchanges(query)
     return [c.dict() for c in changes]
 
-_get_changes_v2_raw = cache.memcache_memoize(_get_changes_v2_raw, key_prefix="upstream._get_changes_v2_raw", timeout=10*60)
 
 def get_changes_v2(query, revision=None):
     page = web.ctx.site.get(query['key'])
@@ -501,7 +499,8 @@ if config.get('upstream_memcache_servers'):
     olmemcache.Client = UpstreamMemcacheClient
     # set config.memcache_servers only after olmemcache.Client is updated
     config.memcache_servers = config.upstream_memcache_servers
-    
+
+@cache.memoize(engine="memcache+memory", expires=5*60, background=True, key="_get_recent_changes")
 def _get_recent_changes():
     site = web.ctx.get('site') or delegate.create_site()
     web.ctx.setdefault("ip", "127.0.0.1")
@@ -539,7 +538,8 @@ def _get_recent_changes():
         r.thing = process_thing(site.get(r.key, r.revision))
         
     return result
-    
+
+@cache.memoize(engine="memcache+memory", expires=5*60, background=True, key="_get_recent_changes2")
 def _get_recent_changes2():
     """New recent changes for around the library.
     
@@ -562,9 +562,6 @@ def _get_recent_changes2():
     messages = [m for m in messages if str(m.get("ignore", "false")).lower() != "true"]
     return messages
     
-_get_recent_changes = web.memoize(_get_recent_changes, expires=5*60, background=True)
-_get_recent_changes2 = web.memoize(_get_recent_changes2, expires=5*60, background=True)
-
 @public
 def get_random_recent_changes(n):
     if "recentchanges_v2" in web.ctx.features:
@@ -576,7 +573,9 @@ def get_random_recent_changes(n):
         return random.sample(changes, n)  
     else:
         return changes
-        
+
+
+@cache.memoize(engine="memcache+memory", expires=5*60, background=True, key=lambda:"blog.openlibrary.org/feed", cacheable=lambda (key,value): len(value) > 0)
 def _get_blog_feeds():
     url = "http://blog.openlibrary.org/feed/"
     try:
@@ -593,8 +592,6 @@ def _get_blog_feeds():
             pubdate=pubdate
         )
     return [parse_item(item) for item in tree.findall("//item")]
-    
-_get_blog_feeds = web.memoize(_get_blog_feeds, expires=5*60, background=True)
 
 @public
 def get_blog_feeds():

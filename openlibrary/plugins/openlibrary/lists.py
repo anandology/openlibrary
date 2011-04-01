@@ -485,6 +485,7 @@ class feeds(delegate.page):
 def setup():
     pass
 
+@cache.memoize(engine="memcache", key="get_recently_modified_lists", expires=5*60)
 def get_recently_modified_lists(limit, offset=0):
     """Returns the most recently modified lists as list of dictionaries.
     
@@ -503,8 +504,7 @@ def get_recently_modified_lists(limit, offset=0):
         list.seed_summary_cached = list.seed_summary
         
     return [list.dict() for list in lists]
-    
-get_recently_modified_lists = cache.memcache_memoize(get_recently_modified_lists, key_prefix="get_recently_modified_lists", timeout=5*60)
+
     
 def _preload_lists(lists):
     """Preloads all referenced documents for each list.

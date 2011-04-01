@@ -4,6 +4,7 @@ import web
 import cache
 from infogami.utils import delegate
 
+@cache.memoize(engine="memcache+memory", key="inlibrary.libraries", expires=60*60)
 def _get_libraries(site=None):
     """Returns all the libraries each as a dict."""
     if 'env' not in web.ctx:
@@ -14,9 +15,6 @@ def _get_libraries(site=None):
     keys = site.things(query={"type": "/type/library", "limit": 1000})
     libraries = site.get_many(keys)
     return [lib.dict() for lib in libraries]
-    
-# cache the result for an hour in memcache
-_get_libraries_memoized = cache.memcache_memoize(_get_libraries, "inlibrary._get_libraries", timeout=60*60)
 
 def get_libraries():
     """Returns all the libraries."""

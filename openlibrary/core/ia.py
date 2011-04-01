@@ -8,8 +8,9 @@ from infogami.utils import stats
 
 import cache
 
+@cache.memoize(engine="memcache", expires=5*60, key=lambda itemid: "metaxml-" + itemid, cacheable=lambda key, value: bool(value))
 def get_meta_xml(itemid):
-    """Returns the contents of meta_xml as JSON.
+    """Returns the contents of meta_xml as python dict.
     """
     url = 'http://www.archive.org/download/%s/%s_meta.xml' % (itemid, itemid)
     try:
@@ -31,8 +32,6 @@ def get_meta_xml(itemid):
     except Exception, e:
         print >> web.debug, "Failed to parse metaxml for %s: %s" % (itemid, str(e)) 
         return web.storage()
-        
-get_meta_xml = cache.memcache_memoize(get_meta_xml, key_prefix="ia.get_meta_xml", timeout=5*60)
         
 def xml2dict(xml, **defaults):
     """Converts xml to python dictionary assuming that the xml is not nested.
