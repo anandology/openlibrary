@@ -9,6 +9,7 @@ import xml.etree.ElementTree as etree
 import datetime
 import gzip
 import StringIO
+import os
 
 from infogami import config
 from infogami.utils import view, delegate, stats
@@ -431,11 +432,98 @@ def get_languages():
     
 @public
 def get_edition_config():
-    thing = web.ctx.site.get('/config/edition')
-    classifications = [web.storage(t.dict()) for t in thing.classifications if 'name' in t]
-    identifiers = [web.storage(t.dict()) for t in thing.identifiers if 'name' in t]
-    roles = thing.roles
-    return web.storage(classifications=classifications, identifiers=identifiers, roles=roles)
+    return EditionConfig()
+    
+class EditionConfig:
+    """Represents edition configuration.
+    
+    Editions have roles, identifiers and classifications. This object keeps
+    track of available roles, available identifiers/classifications and how to
+    link them.
+    
+    New roles/identifiers/classifications can be added from edition edit page.
+    
+    This is saved in the store with key "edition-config".
+    """
+    KEY = "edition-config"
+        
+    def __init__(self):
+        self.d = web.ctx.site.store.get(self.KEY) or self.get_default_edition_config()
+        
+    def get_default_edition_config(self):
+        """Returns the default edition-config.
+        
+        The default edition-config is read from a file default-edition-config.json, which is created by taking the edition-config data from openlibrary.org
+        """
+        dir = os.path.dirname(__file__)
+        path = os.path.join(dir, "default_edition_config.json")
+        return simplejson.loads(open(path).read())
+        
+    @property
+    def roles(self):
+        """Available roles as a list of strings.
+        """
+        return self.d.get('roles', [])
+        
+    @property
+    def identifiers(self):
+        """List of available identifiers.
+        
+        Each identifier is a storage object containing "name", "label", "website" and "notes" fields.
+        """
+        return [web.storage(d) for d in self.d.get('identifiers', [])]
+
+    @property
+    def classifications(self):
+        """List of available classifications.
+        
+        Each identifier is a storage object containing "name", "label", "website" and "notes" fields.
+        """
+        return [web.storage(d) for d in self.d.get('classifications', [])]
+        
+    def add_role(self, role):
+        """Adds a new role.
+        """
+        roles = self.d.setdefault('roles', [])
+        roles.append(role)
+        
+    def add_classification(self, d):
+        """Adds a new classification.
+        """
+        d = {
+            "name": d.get('value') or '', 
+            "label": d.get('label') or '', 
+            "website": d.get("website") or '', 
+            "notes": d.get("notes") or ''
+        }
+        ids = self.d.setdefault("identifiers", [])
+        ids.append(d)
+        
+    def add_identifier(self, d):
+        """Adds a new identifier.
+        """
+        d = {
+            "name": d.get('value') or '', 
+            "label": d.get('label') or '', 
+            "website": d.get("website") or '', 
+            "notes": d.get("notes") or ''
+        }
+        ids = self.d.setdefault("identifiers", [])
+        ids.append(d)
+        
+    def dict(self):
+        return {
+            "_key": self.KEY,
+            "_rev": None, # don't worry about conflicts
+            "roles": self.roles,
+            "classifications": self.classifications,
+            "identifiers": self.d.identifiers
+        }
+        
+    def save(self):
+        """Saves this object in store.
+        """
+        web.ctx.site.store[self.KEY] = self.dict()
 
 from openlibrary.core.olmarkdown import OLMarkdown
 def get_markdown(text, safe_mode=False):
@@ -621,7 +709,6 @@ def setup():
     web.template.Template.FILTERS['.xml'] = websafe
 
     web.commify = commify
-    
     web.template.Template.globals.update({
         'HTML': HTML,
         'request': Request()

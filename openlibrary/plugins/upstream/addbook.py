@@ -406,30 +406,22 @@ class SaveBookHelper:
         new_classifications = f('select-classification-json')
         
         if new_roles or new_ids or new_classifications:
-            edition_config = web.ctx.site.get('/config/edition')
+            edition_config = utils.get_edition_config()
             
             #TODO: take care of duplicate names
             
             if new_roles:
-                edition_config.roles += [d.get('value') or '' for d in new_roles]
-                
-            if new_ids:
-                edition_config.identifiers += [{
-                        "name": d.get('value') or '', 
-                        "label": d.get('label') or '', 
-                        "website": d.get("website") or '', 
-                        "notes": d.get("notes") or ''} 
-                    for d in new_ids]
-                
-            if new_classifications:
-                edition_config.classifications += [{
-                        "name": d.get('value') or '', 
-                        "label": d.get('label') or '', 
-                        "website": d.get("website") or '', 
-                        "notes": d.get("notes") or ''}
-                    for d in new_classifications]
+                for role in new_roles:
+                    edition_config.add_role(role)
                     
-            as_admin(edition_config._save)("add new fields")
+            if new_ids:
+                for d in new_ids:
+                    edition_config.add_identifier(d)
+                    
+            if new_classifications:
+                for d in classifications:
+                    edition_config.add_classification(d)
+            edition_config.save()
     
     def process_input(self, i):
         if 'edition' in i:
