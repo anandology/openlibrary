@@ -51,3 +51,42 @@ def opposite_isbn(isbn): # ISBN10 -> ISBN13 and ISBN13 -> ISBN10
         alt = f(isbn)
         if alt:
             return alt
+
+def both_isbns(isbn):
+    """Returns both isbn_10 and isbn_13 from given ISBN.
+    The given ISBN can be either isbn-10 or isbn-13.
+    """
+    if isbn is None:
+        return None, None
+    else:
+        return to10(isbn), to13(isbn)
+
+def to13(isbn):
+    """Converts the isbn to 13 digit isbn.
+    The given ISBN can be either isbn-10 or isbn-13.
+    """
+    if not isbn:
+        return None
+
+    isbn = isbn.replace("-", "")
+    if len(isbn) == 13:
+        return isbn
+    elif len(isbn) == 10:
+        return isbn_10_to_isbn_13(isbn)
+    else:
+        return None
+
+def to10(isbn):
+    """Converts the isbn to 10 digit isbn.
+    The given ISBN can be either isbn-10 or isbn-13.
+    """
+    if not isbn:
+        return None
+
+    isbn = isbn.replace("-", "")
+    if len(isbn) == 10:
+        return isbn
+    elif len(isbn) == 13:
+        return isbn_13_to_isbn_10(isbn)
+    else:
+        return None
