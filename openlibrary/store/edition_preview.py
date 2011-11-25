@@ -4,6 +4,8 @@
 from datastore import View, DataType
 import web
 
+import sqlalchemy as sa
+
 from openlibrary.utils import isbn as isbnlib
 from . import common
 
