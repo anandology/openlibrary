@@ -4,10 +4,12 @@ from edition_preview import EditionPreviewView
 from edition_identifiers import EditionIdentifiersView
 
 class OLStore(Datastore):
-    tablename = "docs"
+    tablename = "olstore"
     
     def create_views(self):
         return {
-            'edition-preview': EditionPreviewView(),
             'edition-identifiers': EditionIdentifiersView(),
         }
+        
+        
+store = OLStore
