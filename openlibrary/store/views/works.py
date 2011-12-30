@@ -19,7 +19,7 @@ class WorksView(View):
         /works/OL1W     /works/OL1W     /type/work
         /works/OL2W     /works/OL1W     /type/redirect
     """
-    def get_table(self):
+    def get_table(self, metadata):
         table = sa.Table("olstore_works", metadata,
             sa.Column("work_key", sa.Unicode),
             sa.Column("type", sa.Unicode),
