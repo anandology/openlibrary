@@ -3,6 +3,7 @@ from datastore import Datastore
 from .views.edition_identifiers import EditionIdentifiersView
 from .views.works import WorksView
 from .views.work_authors import WorkAuthorsView
+import sqlalchemy as sa
 
 class OLStore(Datastore):
     """Datastore for managing Open Library documents.    
@@ -29,7 +30,7 @@ class OLStore(Datastore):
             return rows[0]['coverid']
         else:
             return -1
-
+            
     def get_work_info(self, work_key):
         """Returns work document with editions and redirects added to it.
         
@@ -51,3 +52,23 @@ class OLStore(Datastore):
                                     if doc['type']['key'] == '/type/redirect']
             return work
     
+    def get_top_works(self, author_key, limit=1):
+        """Returns the keys of works of the given author in the descending order of edition count.
+        """
+        view1 = self.views["works"]
+        view2 = self.views["work-authors"]
+        
+        count = sa.func.count(view1.c._key).label("edition_count")
+        
+        query = (sa.select(columns=[count, view1.c.work_key])
+                    .where(view1.c.work_key==view2.c._key)
+                    .where(view1.c.type == "/type/edition")
+                    .where(view2.c.author_key==author_key)
+                    .group_by(view1.c.work_key)
+                    .order_by(sa.desc("edition_count"))
+                    .limit(limit)
+                )
+        
+        rows = query.execute().fetchall()
+        colnames = ["edition_count", "work_key"]
+        return [dict(zip(colnames, row)) for row in rows]

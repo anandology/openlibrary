@@ -2,9 +2,11 @@ from . import OLStore
 
 class TestOLStore:
     def setup_method(self, m):
-        self.store = OLStore("sqlite:///:memory:")
+        self.store = OLStore("sqlite:///:memory:", echo=True)
 
-    def make_edition(self, key, last_modified, **kw):
+    def make_edition(self, key, last_modified=None, work_key=None, **kw):
+        if work_key:
+            kw['works'] = [{"key": work_key}]
         return self.make_doc(key, 
             type="/type/edition", 
             last_modified=last_modified,
@@ -78,6 +80,30 @@ class TestOLStore:
         
         assert w['editions'][0]['title'] == 'Test Book'
         
-    def test_top_works(self):
-        pass
+    def make_work(self, key, author_keys=[], **kw):
+        return self.make_doc(key,
+                type="/type/work",
+                authors=[{"author": {"key": akey}} for akey in author_keys],
+                **kw)
         
+    def test_top_works(self):
+        b1 = self.make_edition("/books/OL1M", work_key="/works/OL1W")
+        b2 = self.make_edition("/books/OL2M", work_key="/works/OL1W")
+        b3 = self.make_edition("/books/OL3M", work_key="/works/OL2W")
+        
+        w1 = self.make_work("/works/OL1W", author_keys=["/authors/OL1A"])
+        w2 = self.make_work("/works/OL2W", author_keys=["/authors/OL1A"])
+        
+        a1 = self.make_doc("/authors/OL1A", "/type/author")
+        
+        for doc in [b1, b2, b3, w1, w2, a1]:
+            self.store.put(doc['key'], doc)
+                
+        assert self.store.get_top_works("/authors/OL1A", limit=1) == [
+            {"edition_count": 2, "work_key": "/works/OL1W"}
+        ]
+
+        assert self.store.get_top_works("/authors/OL1A", limit=2) == [
+            {"edition_count": 2, "work_key": "/works/OL1W"},
+            {"edition_count": 1, "work_key": "/works/OL2W"},
+        ]
