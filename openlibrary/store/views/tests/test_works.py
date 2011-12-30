@@ -2,7 +2,7 @@ from ..works import WorksView
 
 class TestWorksView:
     def test_get_work_of_edition(self):
-        f = WorksView().get_work_of_edition
+        f = WorksView()._get_work_of_edition
         assert f({}) == None
         
         doc = {

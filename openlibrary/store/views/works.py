@@ -31,7 +31,7 @@ class WorksView(View):
         type = common.get_type(doc)
         
         if type == common.TYPE_EDITION:
-            work = self.get_work_of_edition(doc)
+            work = self._get_work_of_edition(doc)
             yield {
                 'type': type,
                 'work_key': work
@@ -47,7 +47,7 @@ class WorksView(View):
                 'work_key': doc['location']
             }
             
-    def get_work_of_edition(self, edition):
+    def _get_work_of_edition(self, edition):
         """Returns work-key of the given edition.
         
         Returns None if the given edition doesn't belong to any work.
