@@ -1,7 +1,7 @@
 """Edition preview view.
 """
 
-from datastore import View, DataType
+from datastore import View, JsonDataType
 import web
 
 import sqlalchemy as sa
@@ -40,7 +40,7 @@ class EditionPreviewView(View):
         """Schema of the index view."""
         return sa.Table("edition_preview", metadata,
             sa.Column("work", sa.Unicode, index=True),
-            sa.Column("preview", DataType(compress=True))
+            sa.Column("preview", JsonDataType(compress=True))
         )
 
     def map(self, doc):
