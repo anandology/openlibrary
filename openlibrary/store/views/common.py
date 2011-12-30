@@ -2,6 +2,8 @@
 """
 
 TYPE_EDITION = "/type/edition"
+TYPE_WORK = "/type/work"
+TYPE_REDIRECT = "/type/redirect"
 
 OTHER_EDITION_IDS = "isbn_10 isbn_13 lccn oclc_numbers ia_box_id".split()
 
