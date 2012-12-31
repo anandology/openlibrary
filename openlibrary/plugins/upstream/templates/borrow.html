@@ -20,12 +20,36 @@ $ show_returned_message = False
 $if has_returned_recently and not page.key in [loan['book'] for loan in loans]:
     $ show_returned_message = True
 
+$ user = get_ia_user()
+$ loans = user and user.get_loans() or []
+
+<script type="text/javascript">
+    \$(function() {
+        console.log(["setup a.post", \$("a.post")]);
+        \$("a.post").click(function(event) {
+            event.preventDefault();
+
+            console.log("clicked");
+
+            \$("form")
+                .attr("class", "hidden")
+                .attr("method", "post")
+                .attr("action", \$(this).attr("href"))
+                .appendTo(document.body)
+                .submit();
+        });
+    });
+</script>
+
 <div id="contentHead">
     <div class="navBorrow">
-        <a href="http://openlibrary.org/" title="Return to home page"><img src="/images/logo_OL-sm.png" width="90" height="71" alt="Open Library logo" class="right"/></a>
+        <a href="http://archive.org/" title="Go to Internet Archive"><img src="/images/logo_IA-70px.png" alt="Internet Archive logo" class="right"/></a>
         <a href="$page.url()"><strong>&larr; Back</strong></a>
     </div>
 	<h1 class="sansserif">Borrow</h1>
+
+    $if user:
+        <div class="small sansserif grey" style="margin-top: -10px; padding-bottom: 20px;">You are logged into Internet Archive as <b>$user.username</b>. <a href="/account/ia-logout" class="post">Logout</a>?</div>
 </div>
 
 <div id="contentBody">
@@ -79,7 +103,7 @@ $if has_returned_recently and not page.key in [loan['book'] for loan in loans]:
                <div class="message info">
                     <h2 class="sansserif">You have this book checked out. You can read it online or return the book.
                     <p>
-                    $:macros.LoanReadForm(active_loan['book'])
+                    $:macros.LoanReadForm(active_loan)
                     $:macros.ReturnForm(active_loan)
                     </p>
                 </div>
@@ -135,77 +159,28 @@ $if has_returned_recently and not page.key in [loan['book'] for loan in loans]:
                 <p><a href="this book link">Check overdrive.com</a> for availability.</p>
             </div>
             
-        $elif not ctx.user:
+        $elif not user:
             $# not logged in
             
             $if not available_loans:
                 $# not logged in and book is checked-out
                 <div class="message info">
                     <h2 class="sansserif">This title is checked out.</h2>
-                    <p>But, you'll need to <a href="/account/login">log in</a> or <a href="/account/create">open a free account</a> to borrow eBooks from Open library.</p>
+                    <p>But, you'll need to <a href="/account/ia-auth">log in</a> or <a href="#" class="fixthis">open a free account</a> at Internet Archive to borrow eBooks from Open library.</p>
                 </div>        
 
             $else:
                 $# not logged in and book is available
                 <div class="message alert">
-                    <h2 class="sansserif">Only Open Library account holders can borrow this book.</h2>
-                    <p>Log in below, or <a href="/account/create">open a new account</a>.</p>
-                </div>
-                <script type="text/javascript">
-                \$().ready(validateForms);
-                \$().ready(setup_account_create);
-                \$().ready(function(){
-                \$('#username').keyup(function(){
-                     var value = \$(this).val();
-                     \$('#userUrl').addClass('darkgreen').text(value).css('font-weight','700');
-                    });
-                });
-                </script>
-                <div class="panel">
-                    <div class="head">
-                        <h3>Log In</h3>
-                    </div>
-                    <form class="login olform" name="register" action="/account/login" method="post">
-                    <div class="formElement">
-                        <div class="label"><label for="username">$_("Username")</label> <span class="smaller lighter"></span></div>
-                        <div class="input">
-                            <input type="text" class="required" id="username" name="username" value=""/>
-                        </div>
-                    </div>
-                    <div class="formElement">
-                        <div class="label"><label for="password">$_("Password")</label> <span class="smaller lighter"></span></div>
-                        <div class="input">
-                            <input type="password" class="required"  id="password" name="password" value="" />
-                        </div>
-                    </div>
-                    <div class="formElement">
-                        <div class="input">
-                            <input name="remember" type="checkbox" id="remember" />
-                            <label for="remember" class="small">Remember me</label>
-                        </div>
-                    </div>
-                    <input type="hidden" id="redirect" value="$page.url('/borrow')" name="redirect" />
-                    <div class="clearfix"></div>
-                    <div class="formElement bottom">
-                        <br/>
-                        <input value="$_('Log In')" type="submit" name="login" title="$_('Log In')"/>
-                        &nbsp;
-                        <a href="$page.key" class="smaller attn">$_("Cancel")</a>
-                    </div>
-                    <div class="formElement">
-                        <div class="label"></div>
-                        <div class="input smaller">$:_('Did you <a href="/account/password/forgot">forget your password</a>?')
-                        <br/><br/>
-                        $:_('Not a member of Open Library? <a href="/account/create">Sign up now</a>.')</div>
-                    </div>
-                    </form>            
+                    <h2 class="sansserif">Only Internet Archive account holders can borrow this book.</h2>
+                    <p><a href="/account/ia-auth">Log in</a> now, or <a href="#" class="fixthis">open a new account</a>.</p>
                 </div>
 
         $elif len(loans) >= 5:
             $# already loaned maximum number of books
             <div class="message stop">
                 <h2 class="sansserif">Hang on. You've hit the lending limit of 5 concurrent titles.</h2>
-                <p>You can free up space by returning one of <a href="/account/loans/" target="newWindow" title="Open link in a new browser window">your current loans</a> early.</p>
+                <p>You can free up space by returning one of <a href="/account/loans" target="newWindow" title="Open link in a new browser window">your current loans</a> early.</p>
             </div>
 
         $elif not available_loans:

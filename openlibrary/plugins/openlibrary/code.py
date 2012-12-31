@@ -801,7 +801,7 @@ def setup_context_defaults():
     })
 
 def setup():
-    import home, inlibrary, borrow_home, libraries, stats, support, events, status, merge_editions, authors
+    import home, inlibrary, borrow_home, libraries, stats, support, events, status, merge_editions, authors, ia_auth
     
     home.setup()
     inlibrary.setup()
@@ -813,6 +813,7 @@ def setup():
     status.setup()
     merge_editions.setup()
     authors.setup()
+    ia_auth.setup()
     
     import api
     api.setup()

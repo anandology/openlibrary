@@ -194,6 +194,8 @@ class Edition(models.Edition):
         return self._get_available_loans(borrow.get_edition_loans(self))
         
     def _get_available_loans(self, current_loans):
+        if self._is_item_loaned_out():
+            return []
         
         default_type = 'bookreader'
         
@@ -231,6 +233,9 @@ class Edition(models.Edition):
                 return []
                     
         return loans
+
+    def _is_item_loaned_out(self):
+        return self.ocaid and bool(ia.get_loans(self.ocaid))
     
     def update_loan_status(self):
         """Update the loan status"""

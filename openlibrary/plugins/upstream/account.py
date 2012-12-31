@@ -16,6 +16,7 @@ import infogami.core.code as core
 from openlibrary.i18n import gettext as _
 from openlibrary.core import helpers as h
 from openlibrary.core import support
+from openlibrary.plugins.openlibrary import ia_auth
 from openlibrary import accounts
 import forms
 import utils
@@ -402,12 +403,9 @@ class account_notifications(delegate.page):
 class account_loans(delegate.page):
     path = "/account/loans"
 
-    @require_login
     def GET(self):
-        user = accounts.get_current_user()
-        user.update_loan_status()
-        loans = borrow.get_loans(user)
-        return render['account/borrow'](user, loans)
+        user = ia_auth.get_ia_user()
+        return render['account/borrow'](user)
 
 class account_others(delegate.page):
     path = "(/account/.*)"
