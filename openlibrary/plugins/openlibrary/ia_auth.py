@@ -69,7 +69,8 @@ class ArchiveUser:
 
     def _prepare_loan(self, loan):
         loan = web.storage(loan)
-        loan.book = self._find_ol_key(loan["identifier"])
+        loan.book = self._find_ol_key(loan.identifier)
+        loan.ocaid = loan.identifier
         loan.loan_link = ""
         loan.resource_type = loan.format
         loan.return_url = ia.make_ia_url("/borrow.php", identifier=loan['identifier'])
