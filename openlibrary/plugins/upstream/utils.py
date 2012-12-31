@@ -620,6 +620,7 @@ class Request:
     path = property(lambda self: web.ctx.path)
     home = property(lambda self: web.ctx.home)
     domain = property(lambda self: web.ctx.host)
+    url = property(lambda self: web.ctx.home + web.ctx.fullpath)
 
 def setup():
     """Do required initialization"""
