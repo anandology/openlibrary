@@ -6,6 +6,7 @@ import hmac
 import re
 import simplejson
 import string
+import urllib
 import urllib2
 import uuid
 import logging
@@ -23,7 +24,9 @@ from utils import render_template
 from openlibrary.core import inlibrary
 from openlibrary.core import stats
 from openlibrary.core import msgbroker
+from openlibrary.core import ia
 from openlibrary import accounts
+from openlibrary.plugins.openlibrary import ia_auth
 
 from lxml import etree
 
@@ -79,6 +82,8 @@ class borrow(delegate.page):
     path = "(/books/OL\d+M)/borrow"
     
     def GET(self, key):
+        ia_auth.check_ia_auth()
+
         edition = web.ctx.site.get(key)
         
         if not edition:
@@ -105,92 +110,20 @@ class borrow(delegate.page):
         """Called when the user wants to borrow the edition"""
         
         i = web.input(action='borrow', format=None, ol_host=None)
-
-        if i.ol_host:
-            ol_host = i.ol_host
-        else:        
-            ol_host = 'openlibrary.org'
-        
         edition = web.ctx.site.get(key)
         if not edition:
             raise web.notfound()
-        error_redirect = edition.url("/borrow")
-        
-        user = accounts.get_current_user()
-        if not user:
-            raise web.seeother(error_redirect)
 
-        if i.action == 'borrow':
-            resource_type = i.format
-            
-            if resource_type not in ['epub', 'pdf', 'bookreader']:
-                raise web.seeother(error_redirect)
-            
-            if user_can_borrow_edition(user, edition, resource_type):
-                loan = Loan(user.key, key, resource_type)
-                if resource_type == 'bookreader':
-                    # The loan expiry should be utc isoformat
-                    loan.expiry = datetime.datetime.utcfromtimestamp(time.time() + bookreader_loan_seconds).isoformat()
-                loan_link = loan.make_offer() # generate the link and record that loan offer occurred
-                                
-                # $$$ Record fact that user has done a borrow - how do I write into user? do I need permissions?
-                # if not user.has_borrowed:
-                #   user.has_borrowed = True
-                #   user.save()
-                
-                if resource_type == 'bookreader':
-                    stats.increment('loans.bookreader')
-                elif resource_type == 'pdf':
-                    stats.increment('loans.pdf')
-                elif resource_type == 'epub':
-                    stats.increment('loans.epub')
-                    
-                if resource_type == 'bookreader':
-                    raise web.seeother(make_bookreader_auth_link(loan.get_key(), edition.ocaid, '/stream/' + edition.ocaid, ol_host))
-                else:
-                    raise web.seeother(loan_link)
-            else:
-                # Send to the borrow page
-                raise web.seeother(error_redirect)
-                
-        elif i.action == 'return':
-            # Check that this user has the loan
-            user.update_loan_status()
-            loans = get_loans(user)
+        identifier = edition.ocaid
 
-            # We pick the first loan that the user has for this book that is returnable.
-            # Assumes a user can't borrow multiple formats (resource_type) of the same book.
-            user_loan = None
-            for loan in loans:
-                # Handle the case of multiple edition records for the same 
-                # ocaid and the user borrowed from one and returning from another
-                has_loan = (loan['book'] == edition.key or loan['ocaid'] == edition.ocaid)
-                if has_loan and can_return_resource_type(loan['resource_type']):
-                    user_loan = loan
-                    break
-                    
-            if not user_loan:
-                # $$$ add error message
-                raise web.seeother(error_redirect)
-                
-            # They have it -- return it
-            return_resource(user_loan['resource_id'])
-            
-            # Show the page with "you've returned this"
-            # $$$ this would do better in a session variable that can be cleared
-            #     after the message is shown once
-            raise web.seeother(edition.url('/borrow?r=t'))
-            
-        elif i.action == 'read':
-            # Look for loans for this book
-            user.update_loan_status()
-            loans = get_loans(user)
-            for loan in loans:
-                if loan['book'] == edition.key:
-                    raise web.seeother(make_bookreader_auth_link(loan['_key'], edition.ocaid, '/stream/' + edition.ocaid, ol_host))
-            
-        # Action not recognized
-        raise web.seeother(error_redirect)
+        params = {
+            "action": "borrow-api",
+            "identifier": identifier,
+            "format": i.format,
+            "token": ia.make_token("%s-%s" % (identifier, i.format), 5)
+        }
+        url = ia.make_ia_url("/borrow.php?" + urllib.urlencode(params))
+        raise web.seeother(url)
         
 # Handler for /books/{bookid}/{title}/_borrow_status
 class borrow_status(delegate.page):
@@ -304,7 +237,7 @@ class borrow_admin_no_update(delegate.page):
 
         
 # Handler for /iauth/{itemid}
-class ia_auth(delegate.page):
+class ia_auth_page(delegate.page):
     path = r"/ia_auth/(.*)"
     
     def GET(self, item_id):
@@ -747,7 +680,7 @@ def delete_loan(loan_key, loan = None):
 def get_ia_auth_dict(user, item_id, resource_id, user_specified_loan_key, access_token):
     """Returns response similar to one of these:
     {'success':true,'token':'1287185207-fa72103dd21073add8f87a5ad8bce845','borrowed':true}
-    {'success':false,'msg':'Book is checked out','borrowed':false, 'resolution': 'You can visit <a href="http://openlibary.org/ia/someid">this book\'s page on Open Library</a>.'}
+    {'success':false,'msg':'Book is checked out','borrowed':false, 'resolution': 'You can visit <a href="http://openlibrary.org/ia/someid">this book\'s page on Open Library</a>.'}
     """
     
     base_url = 'http://' + web.ctx.host

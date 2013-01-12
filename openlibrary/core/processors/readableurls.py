@@ -39,6 +39,7 @@ class ReadableUrlProcessor:
             raise web.redirect(web.safeunicode(readable_path) + web.safeunicode(web.ctx.query))
 
         web.ctx.readable_path = readable_path
+        web.ctx.readable_fullpath = readable_path + web.ctx.query
         web.ctx.path = real_path
         web.ctx.fullpath = web.ctx.path + web.ctx.query
         return handler()

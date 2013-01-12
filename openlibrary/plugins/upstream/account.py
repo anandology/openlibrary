@@ -404,6 +404,8 @@ class account_loans(delegate.page):
     path = "/account/loans"
 
     def GET(self):
+        ia_auth.check_ia_auth()
+        
         user = ia_auth.get_ia_user()
         return render['account/borrow'](user)
 

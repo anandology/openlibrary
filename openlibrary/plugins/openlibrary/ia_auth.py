@@ -13,30 +13,48 @@ def setup():
 class ia_auth(delegate.page):
     path = "/account/ia-auth"
     def GET(self):
-        referer = web.ctx.env.get('HTTP_REFERER', '/')
+        i = web.input(next=None, redirect="true")
+        return self.redirect(i.next, i.redirect)
+
+    def redirect(self, next=None, redirect="true"):
+        referer = next or web.ctx.env.get('HTTP_REFERER', '/')
         callback = web.ctx.home + "/account/ia-auth-callback?" + urllib.urlencode(dict(next=referer))
-        url = ia.make_ia_url("/account/auth.php", next=callback)
+        url = ia.make_ia_url("/account/auth.php", next=callback, redirect=redirect)
         raise web.seeother(url)
 
 class ia_logout(delegate.page):
     path = "/account/ia-logout"
     def POST(self):
-        web.setcookie("ia_auth", "", expires=-1)
+        web.setcookie("ia_auth", "", expires=5*60)
         referer = web.ctx.env.get('HTTP_REFERER', '/')
-        raise web.seeother(referer)
+        url = ia.make_ia_url("/account/logout.php", next=referer)
+        raise web.seeother(url)
 
 class ia_auth_callback(delegate.page):
     path = "/account/ia-auth-callback"
     
     def GET(self):
-        i = web.input(token="", userid="", next="/")
-        if ia.verify_token(i.userid, i.token):
-            cookie = i.userid + "$" + ia.make_token(i.userid, 365*24*3600)
-            web.setcookie("ia_auth", cookie)
+        i = web.input(token="", username="", next="/")
+        if ia.verify_token(i.username, i.token):
+            cookie = i.username + "$" + ia.make_token(i.username, 365*24*3600)
+            # cookie is valid for 5 minutes. After that it will again check
+            # for login.
+            web.setcookie("ia_auth", cookie, expires=5*60)
         raise web.seeother(i.next)
 
+def check_ia_auth():
+    """Contacts archive.org to get the latest info of the currently logged-in 
+    user, if not already logged in.
+    """
+    if "ia_auth" not in web.cookies():
+        # when /books/OL1M/foo/borrow?x=1 is accessed:
+        #   web.ctx.fullpath = "/books/OL1M/borrow?x=1"
+        #   web.ctx.readable_fullpath = "/books/OL1M/foo/borrow?x=1"
+        next = web.ctx.get("readable_fullpath") or web.ctx.fullpath
+        return ia_auth().redirect(next=next, redirect="false")
+
 def get_current_username():
-    cookie = web.cookies(ia_auth="").ia_auth
+    cookie = web.cookies(ia_auth=None).ia_auth
     if cookie:
         try:
             username, token = cookie.split("$")
@@ -55,11 +73,12 @@ class ArchiveUser:
         self.username = username
 
     def get_loans(self):
-        return [self._prepare_loan(loan) for loan in self._fetch_loans(self.username)]
+        loans = [self._prepare_loan(loan) for loan in self._fetch_loans(self.username)]
+        return [loan for loan in loans if loan]
 
     def _fetch_loans(self, username):
         token = ia.make_token(username, 10)
-        url = ia.make_ia_url("/account/loans.php", format="json", userid=username, token=token)
+        url = ia.make_ia_url("/account/loans.php", format="json", username=username, token=token)
         try:
             jsontext = urllib.urlopen(url).read()
             data = simplejson.loads(jsontext)
@@ -80,6 +99,9 @@ class ArchiveUser:
             loan.expiry = loan.until
         else:
             loan.expiry = None
+
+        if loan.book is None:
+            return None
         return loan
 
     def datetime_to_float(self, d):
