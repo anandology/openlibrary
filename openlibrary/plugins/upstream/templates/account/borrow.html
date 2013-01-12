@@ -36,7 +36,7 @@ $if len(loans) >= 5:
 <div id="contentHead">
     <div class="navBorrow">
         <a href="http://archive.org/" title="Go to Internet Archive"><img src="/images/logo_IA-70px.png" alt="Internet Archive logo" class="right"/></a>
-        <a href="#"><strong>&larr; Back</strong></a>
+        <a href="/"><strong>&larr; Back to Open Library</strong></a>
     </div>
 
     <h1>$_("Books You've Checked Out")</h1>
@@ -148,7 +148,7 @@ $if user and len(loans) == 0:
             </strong>
             <span class="larger"><em>$_("eBooks everywhere")</em></span>
         </p>
-        <p class="large">$:_('The <a href="http://www.archive.org/">Internet Archive</a> and several partner libraries are offering thousands of eBooks for loan to anyone with an Open Library account, anywhere in the world.')</p>
+        <p class="large">$:_('The <a href="http://www.archive.org/">Internet Archive</a> and several partner libraries are offering thousands of eBooks for loan to anyone with an Internet Archive account, anywhere in the world.')</p>
         <p style="line-height:1em;margin:1.5em 0 1em;">
             <strong>
             <span style="font-size:1.875em;">2.</span>
@@ -170,13 +170,13 @@ $if user and len(loans) == 0:
     <div class="contentQuarter">
         <div class="section">
             <h3>$_("Getting Started")</h3>
-            <p class="small sansserif">$_("All you need to borrow a book scanned at the Internet Archive is an Open Library account and Adobe Digital Editions.")</p>
+            <p class="small sansserif">$_("All you need to borrow a book scanned at the Internet Archive is an Internet Archive account and Adobe Digital Editions.")</p>
             <p class="small sansserif">$_("Loans through OverDrive or WorldCat are managed through your local libraries, not through Open Library.")</p>
             <p class="small sansserif">$:_('Check out the <a href="/help/faq#section-borrowing"><strong>Lending FAQ</strong></a> for more information.')</p>
         </div>
         <div class="section">
             <h3>Which books are available?</h3>
-            <p class="small sansserif">$:_('Browse all the available books through the <a href="/subjects/lending_library">"Lending Library"</a> subject, or try a <a href="/search?subject_facet=Lending%20library">search</a>.')</p>
+            <p class="small sansserif">$:_('Browse all the <a href="/borrow">books available to borrow</a>, or try a <a href="/search?subject_facet=Lending%20library">search</a>.')</p>
             <p class="small sansserif">$:_('You can also <a href="/subjects/overdrive">browse OverDrive titles here</a>.')</p>
         </div>
     </div>
