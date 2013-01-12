@@ -190,13 +190,12 @@ class Edition(models.Edition):
         Returns [{'resource_id': uuid, 'resource_type': type, 'size': bytes}]
         
         size may be None"""
-        
-        return self._get_available_loans(borrow.get_edition_loans(self))
+        return self._get_available_loans(ia.get_loans(self.ocaid))
         
     def _get_available_loans(self, current_loans):
         if self._is_item_loaned_out():
             return []
-        
+
         default_type = 'bookreader'
         
         loans = []
@@ -214,7 +213,7 @@ class Edition(models.Edition):
                 loans.append( { 'resource_id': resource_id, 'resource_type': type, 'size': None } )
             elif resource_urn.startswith('bookreader'):
                 loans.append( { 'resource_id': resource_urn, 'resource_type': 'bookreader', 'size': None } )
-                    
+
         # Put default type at start of list, then sort by type name
         def loan_key(loan):
             if loan['resource_type'] == default_type:
@@ -222,16 +221,6 @@ class Edition(models.Edition):
             else:
                 return '2-%s' % loan['resource_type']        
         loans = sorted(loans, key=loan_key)
-                    
-        # For each possible loan, check if it is available
-        # We shouldn't be out of sync (we already checked get_edition_loans for current loans) but we fail safe, for example
-        # the book may have been borrowed in a dev instance against the live ACS4 server
-        for loan in loans:
-            if borrow.is_loaned_out(loan['resource_id']):
-                # Only a single loan of an item is allowed
-                # $$$ log out of sync state
-                return []
-                    
         return loans
 
     def _is_item_loaned_out(self):
