@@ -83,7 +83,7 @@ class ArchiveUser:
             jsontext = urllib.urlopen(url).read()
             data = simplejson.loads(jsontext)
             return data['loans']
-        except IOError:
+        except (IOError, KeyError):
             return []
 
     def _prepare_loan(self, loan):
