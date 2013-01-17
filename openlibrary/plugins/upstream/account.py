@@ -17,12 +17,13 @@ from openlibrary.i18n import gettext as _
 from openlibrary.core import helpers as h
 from openlibrary.core import support
 from openlibrary import accounts
+from openlibrary.core import ia
+
 import forms
 import utils
 import borrow
 
 from openlibrary.plugins.recaptcha import recaptcha
-
 
 logger = logging.getLogger("openlibrary.account")
 
@@ -111,6 +112,8 @@ class account_login(delegate.page):
     def GET(self):
         referer = web.ctx.env.get('HTTP_REFERER', '/')
         i = web.input(redirect=referer)
+        return self.redirect(next=i.redirect)
+
         f = forms.Login()
         f['redirect'].value = i.redirect
         return render.login(f)
@@ -171,6 +174,12 @@ class account_login(delegate.page):
         title = _("Hi %(user)s", user=account.displayname)
         message = _("We've sent the verification email to %(email)s. You'll need to read that and click on the verification link to verify your email.", email=account.email)
         return render.message(title, message)
+
+    def redirect(self, next=None, redirect="true"):
+        referer = next or web.ctx.env.get('HTTP_REFERER', '/')
+        callback = web.ctx.home + "/account/ia-auth-callback?" + urllib.urlencode(dict(next=referer))
+        url = ia.make_ia_url("/account/auth.php", next=callback, redirect=redirect)
+        raise web.seeother(url)
 
 class account_verify(delegate.page):
     """Verify user account.
@@ -408,6 +417,30 @@ class account_loans(delegate.page):
         user.update_loan_status()
         loans = borrow.get_loans(user)
         return render['account/borrow'](user, loans)
+
+class account_ia_auth_callback(delegate.page):
+    path = "/account/ia-auth-callback"
+    
+    def GET(self):
+        i = web.input(token="", username="", next="/", remember="")
+        if ia.verify_token(i.username, i.token):
+            account = accounts.find(ia_email=i.username)
+            print "account", account
+            if account:
+                expires = (i.remember and 3600*24*7) or ""
+                cookie = account.fake_login_cookie()
+                web.setcookie(config.login_cookie_name, cookie, expires=expires)
+                raise web.seeother(i.next)
+            else:
+                raise web.seeother("/account/link?" + urllib.urlencode(i))
+        raise web.seeother(i.next)
+
+class account_link(delegate.page):
+    path = "/account/link"
+
+    def GET(self):
+        # TODO: Implement account linking page
+        raise web.notfound()
 
 class account_others(delegate.page):
     path = "(/account/.*)"

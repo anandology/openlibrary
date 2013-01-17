@@ -4,8 +4,12 @@ import urllib2
 from xml.dom import minidom
 import simplejson
 import web
+import urllib
+import time
+import hmac
 
 from infogami.utils import stats
+from infogami import config
 
 import cache
 
@@ -86,3 +90,58 @@ def locate_item(itemid):
     """
     d = _get_metadata(itemid)
     return d.get('server'), d.get('dir')
+
+
+def get_ia_host():
+    return config.get("ia_host", "archive.org")
+
+def make_ia_url(path, **kwargs):
+    url = "http://" + get_ia_host() + path
+    if kwargs:
+        url += "?" + urllib.urlencode(kwargs)
+    return url
+
+def _get_ia_secret():
+    try:
+        return config.ia_access_secret
+    except AttributeError:
+        raise Exception("config value config.ia_access_secret is not present -- check your config")
+
+def make_token(name, expiry_seconds):
+    """Cryptographically signs the name using a secret key shared betwen openlibrary and archvie.org.
+
+    The expiry_seconds parameters specifies how long the token is valid.
+
+    The secret key is specified in the openlibrary config as ``ia_access_secret``.
+    """
+    timestamp = int(time.time() + expiry_seconds)
+    return _sign_token(name, timestamp)
+
+def _sign_token(data, timestamp):
+    token_data = '%s-%d' % (data, timestamp)
+    
+    secret = _get_ia_secret()
+    token = '%d-%s' % (timestamp, hmac.new(secret, token_data).hexdigest())
+    return token
+
+def verify_token(name, token):
+    """Cryptographically verifies that the token is the given name signed by
+    the secret key shared between archive.org and openlibrary.
+    """
+    try:
+        access_key = config.ia_access_secret
+    except AttributeError:
+        raise Exception("config value config.ia_access_secret is not present -- check your config")
+    
+    # split token
+    try:
+        token_timestamp, token_hmac = token.split('-')
+    except ValueError:
+        return False
+        
+    # token expired?
+    if int(token_timestamp) < time.time():
+        return False
+
+    # token matched?
+    return token == _sign_token(name, int(token_timestamp))
