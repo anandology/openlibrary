@@ -28,7 +28,7 @@ $else:
             \$('#borrowbook').submit();
             // No need to refresh the page for bookreader loans
             if (\$(this).find('input').val() != "bookreader") {
-                setTimeout('document.location.reload()', 4000);
+                setTimeout('document.location.reload()', 10000);
             }
             return true;
         });
