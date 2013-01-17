@@ -155,8 +155,6 @@ class borrow(delegate.page):
                 raise web.seeother(error_redirect)
                 
         elif i.action == 'return':
-            # Check that this user has the loan
-            user.update_loan_status()
             loans = get_loans(user)
 
             # We pick the first loan that the user has for this book that is returnable.
@@ -173,9 +171,10 @@ class borrow(delegate.page):
             if not user_loan:
                 # $$$ add error message
                 raise web.seeother(error_redirect)
-                
+
+            account = user.get_account()
             # They have it -- return it
-            return_resource(user_loan['resource_id'])
+            ia.return_bookreader_loan(account.get("ia_email"), user_loan['identifier'])
             
             # Show the page with "you've returned this"
             # $$$ this would do better in a session variable that can be cleared
@@ -184,7 +183,6 @@ class borrow(delegate.page):
             
         elif i.action == 'read':
             # Look for loans for this book
-            user.update_loan_status()
             loans = get_loans(user)
             for loan in loans:
                 if loan['book'] == edition.key:

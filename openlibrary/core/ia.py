@@ -189,6 +189,11 @@ def borrow(username, identifier, resource_type):
         resource_type=resource_type)
     return data
 
+def return_bookreader_loan(username, identifier):
+    return _internal_api(
+        method="return_bookreader_loan",
+        username=username,
+        identifier=identifier)
 
 class Loan(web.storage):
     def __init__(self, data):
