@@ -10,6 +10,7 @@ import hmac
 
 from infogami.utils import stats
 from infogami import config
+from openlibrary.core import helpers as h
 
 import cache
 
@@ -145,3 +146,52 @@ def verify_token(name, token):
 
     # token matched?
     return token == _sign_token(name, int(token_timestamp))
+
+def _internal_api(method, **kw):
+    # take values in the sorted order of keys to compute token
+    values = [kv[1] for kv in sorted(kw.items())]
+    token = make_token("".join(values), 10)
+    kw['method'] = method
+    kw['token'] = token
+
+    url = make_ia_url("/account/api.php", **kw)
+
+    # TODO: handle errors
+    jsontext = urllib.urlopen(url).read()
+    return simplejson.loads(jsontext)
+
+def get_loans(username):
+    """Returns loans of the archive.org user identified bu the username.
+
+    This uses the archive.org internal API to get this info.
+    """
+    data = _internal_api(method="get_loans", username=username)
+    
+    # create loan objects
+    loans = [Loan(d) for d in data["loans"]]
+
+    # consider only the ones which have a valid OL key
+    # This can happen when the book is not loaded to openlibrary
+    loans = [loan for loan in loans if loan.book]
+    return loans
+
+class Loan(web.storage):
+    def __init__(self, data):
+        self.update(data)
+
+        self.book = self._find_ol_key(self.identifier)
+        self.ocaid = self.identifier
+        self.loan_link = ""
+        self.resource_type = self.format
+        self.loaned_at = self.datetime_to_float(h.parse_datetime(self.created))
+        if self.fulfilled:
+            self.expiry = self.until
+        else:
+            self.expiry = None
+
+    def datetime_to_float(self, d):
+        return float(d.strftime("%s.%f"))
+
+    def _find_ol_key(self, itemid):
+        keys = web.ctx.site.things({"type": "/type/edition", "ocaid": itemid})
+        return keys and keys[0] or None

@@ -23,6 +23,7 @@ from utils import render_template
 from openlibrary.core import inlibrary
 from openlibrary.core import stats
 from openlibrary.core import msgbroker
+from openlibrary.core import ia
 from openlibrary import accounts
 
 from lxml import etree
@@ -436,7 +437,14 @@ def get_all_loans():
 
 def get_loans(user):
     # return web.ctx.site.store.values(type='/type/loan', name='user', value=user.key)
-    return get_all_store_values(type='/type/loan', name='user', value=user.key)    
+    #return get_all_store_values(type='/type/loan', name='user', value=user.key)    
+    account = user.get_account()
+
+    ia_email = account.get("ia_email")
+    if ia_email:
+        return ia.get_loans(ia_email)
+    else:
+        return []
 
 def get_edition_loans(edition):
     # An edition can't have loans if it doens't have an IA ID. 
