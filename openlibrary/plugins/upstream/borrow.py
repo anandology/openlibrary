@@ -85,12 +85,12 @@ class borrow(delegate.page):
         if not edition:
             raise web.notfound()
 
-        edition.update_loan_status()
+        #edition.update_loan_status()
             
         loans = []
         user = accounts.get_current_user()
         if user:
-            user.update_loan_status()
+            #user.update_loan_status()
             loans = get_loans(user)
         
         # Check if we recently did a return
@@ -887,12 +887,16 @@ def make_bookreader_auth_link(loan_key, item_id, book_path, ol_host):
     Generate a link to BookReaderAuth.php that starts the BookReader with the information to initiate reading
     a borrowed book
     """
-    
-    access_token = make_ia_token(item_id, bookreader_auth_seconds)
-    auth_url = 'http://%s/bookreader/BookReaderAuth.php?uuid=%s&token=%s&id=%s&bookPath=%s&olHost=%s' % (
-        bookreader_host, loan_key, access_token, item_id, book_path, ol_host
+
+    kw = dict(
+        uuid=loan_key,
+        id=item_id,
+        bookPath=book_path,
+        olHost=ol_host,
+        token=make_ia_token(item_id, bookreader_auth_seconds),
+        olAuthUrl=ia.make_ia_url("/borrow.php", mode="auth", identifier="XXX")
     )
-    
+    auth_url = ia.make_ia_url("/bookreader/BookReaderAuth.php", **kw)
     return auth_url
     
 def on_loan_update(loan):
@@ -995,11 +999,26 @@ class Loan:
     def remove(self):
         web.ctx.site.delete(self.get_key())
         on_loan_delete(self.get_dict())
+
+    def get_ia_username(self):
+        a = web.ctx.site.get(self.user_key).get_account()
+        return a.get("ia_email")
+
+    def get_identifier(self):
+        book = web.ctx.site.get(self.book_key)
+        return book.ocaid or None
         
     def make_offer(self):
         """Create loan url and record that loan was offered.  Returns the link URL that triggers
            Digital Editions to open or the link for the BookReader."""
-           
+        ia_username = self.get_ia_username()
+        identifier = self.get_identifier()
+        d = ia.borrow(username=ia_username, identifier=identifier, resource_type=self.resource_type)
+        url = d.get('url')
+        if not url:
+            raise Exception('Could not get loan link for edition %s type %s' % self.book_key, self.resource_type)
+        return d['url']
+
         edition = web.ctx.site.get(self.book_key)
         resource_id, loan_link = get_loan_link(edition, self.resource_type)
         if not loan_link:

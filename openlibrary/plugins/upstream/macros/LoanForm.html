@@ -26,7 +26,10 @@ $else:
             \$('.postSubmit').show();
             \$('#ol_host').attr('value', location.host);
             \$('#borrowbook').submit();
-            setTimeout('document.location.reload()', 4000);
+            // No need to refresh the page for bookreader loans
+            if (\$(this).find('input').val() != "bookreader") {
+                setTimeout('document.location.reload()', 4000);
+            }
             return true;
         });
         if (\$('fieldset.online').length == 0) {\$('form.olform').css('width','455px');};

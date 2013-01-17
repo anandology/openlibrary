@@ -7,12 +7,15 @@ import web
 import urllib
 import time
 import hmac
+import logging
 
 from infogami.utils import stats
 from infogami import config
 from openlibrary.core import helpers as h
 
 import cache
+
+logger = logging.getLogger("openlibrary.ia")
 
 def get_meta_xml(itemid):
     """Returns the contents of meta_xml as JSON.
@@ -155,6 +158,7 @@ def _internal_api(method, **kw):
     kw['token'] = token
 
     url = make_ia_url("/account/api.php", **kw)
+    logger.info("API call: %s", url)
 
     # TODO: handle errors
     jsontext = urllib.urlopen(url).read()
@@ -175,6 +179,17 @@ def get_loans(username):
     loans = [loan for loan in loans if loan.book]
     return loans
 
+def borrow(username, identifier, resource_type):
+    """Borrows a book via archive.org internal API.
+    """
+    data = _internal_api(
+        method="borrow",
+        username=username,
+        identifier=identifier,
+        resource_type=resource_type)
+    return data
+
+
 class Loan(web.storage):
     def __init__(self, data):
         self.update(data)
@@ -188,6 +203,9 @@ class Loan(web.storage):
             self.expiry = self.until
         else:
             self.expiry = None
+
+        self.key = "loan-" + self.identifier
+        self._key = self.key
 
     def datetime_to_float(self, d):
         return float(d.strftime("%s.%f"))
