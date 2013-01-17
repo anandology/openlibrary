@@ -177,6 +177,17 @@ $ has_profile = person.get_user() is not None
         </td>
     </tr>
     <tr>
+        <td>$:_("Internet Archive<br/>Username/Email Address:")</td>
+        <td>
+            <form method="POST" name="form-ia" id="form-ia" class="validate">
+                <input type="text" name="email" id="iaemail" class="email big" value="$input.get('email', person['email'])"/>
+                <button type="submit" name="action" value="update_ia_email">Change</button>
+                <span class="invalid" htmlfor="iaemail" generated="true">$errors.get("email")</span>
+            </form>
+        </td>
+    </tr>
+
+    <tr>
         <td>$_("Bot")</td>
         <td>
             $if has_profile:
@@ -224,6 +235,22 @@ $ has_profile = person.get_user() is not None
                 <a class="tag $cond(person.has_tag(t), 'active')">$t</a>
         </td>
     </tr>
+
+    <tr>
+        <td><h2>$:_("Internet Archive Account")</h2></td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>IA Username</td>
+        <td>
+            <form method="POST" name="form-ia" id="form-ia" class="validate">
+                <input type="text" name="ia_email" id="ia_email" class="email big" value="$input.get('ia_email', person.get('ia_email'))"/>
+                <button type="submit" name="action" value="update_ia_email">Change</button>
+                <span class="invalid" htmlfor="ia_email" generated="true">$errors.get("ia_email")</span>
+            </form>
+        </td>
+    </tr>
+
     </tbody>
   </table>
 
@@ -236,25 +263,6 @@ $if user:
 $else:
   <em>Account not activated yet.</em>
 </div>
-
-<h2>$_("Cases")</h2>
-$ cases = person.get_cases()
-$if cases:
-    <table class="changeHistory" border="0" cellspacing="0" cellpadding="10">
-    $for case in cases:
-        <tr>
-            <td align="right">$case.caseid</td>
-            <td>$datestr(case.created)</td>
-            <td><a href="/admin/support/$(case.caseno)">$case.subject</a></td>
-            <td><a href="/admin/people/$(case.creator_username)">$case.creator_name</a></td>
-            <td>$case.assignee</td>
-            <td>$datestr(case.last_modified)</td>
-            <td>$len(case.history)</td>
-            <td>$case.status</td>
-        </tr>
-    </table>
-$else:
-  <em>None found.</em>
 
 <h2>
     $_("Edit History") 

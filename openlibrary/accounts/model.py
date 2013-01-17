@@ -2,6 +2,7 @@
 
 """
 import datetime
+import time
 import hmac
 import random
 import uuid
@@ -149,6 +150,9 @@ class Account(web.storage):
     
     def update_email(self, email):
         web.ctx.site.update_account(self.username, email=email)
+
+    def update_ia_email(self, ia_email):
+        web.ctx.site.update_account(self.username, ia_email=ia_email)
         
     def send_verification_email(self):
         send_verification_email(self.username, self.email)
@@ -192,6 +196,12 @@ class Account(web.storage):
             self['last_login'] = datetime.datetime.utcnow().isoformat()
             self._save()
             return "ok"
+
+    def fake_login_cookie(self):
+        key = "/people/" + self.username
+        t = datetime.datetime(*time.gmtime()[:6]).isoformat()
+        text = "%s,%s" % (key, t)
+        return text + "," + generate_hash(get_secret_key(), text)
             
     def _save(self):
         """Saves this account in store.

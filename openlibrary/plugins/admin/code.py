@@ -174,6 +174,8 @@ class people_view:
             return self.POST_remove_tag(user, i.tag)
         elif i.action == "set_bot_flag":
             return self.POST_set_bot_flag(user, i.bot)
+        elif i.action == "update_ia_email":
+            return self.POST_update_ia_email(user, i)            
         else:
             raise web.seeother(web.ctx.path)
 
@@ -204,9 +206,8 @@ class people_view:
 
         if not forms.email_not_already_used.valid(i.email):
             return render_template("admin/people/view", user, i, {"email": forms.email_not_already_used.msg})
-        
-        account.update_email(i.email)
-        
+
+        account.update_ia_email(i.email)
         add_flash_message("info", "Email updated successfully!")
         raise web.seeother(web.ctx.path)
     
@@ -233,6 +234,20 @@ class people_view:
         bot = (bot and bot.lower()) == "true"
         account.set_bot_flag(bot)
         raise web.seeother(web.ctx.path)
+
+    def POST_update_ia_email(self, account, i):
+        user = account.get_user()
+        if not forms.vemail.valid(i.ia_email):
+            return render_template("admin/people/view", user, i, {"ia_email": forms.vemail.msg})
+
+        if not forms.ia_email_not_already_linked.valid(i.ia_email):
+            return render_template("admin/people/view", user, i, 
+                {"ia_email": "Internet Archive account with this email is already linked."})
+        
+        account.update_ia_email(i.ia_email)
+        add_flash_message("info", "Internet Archive account email is updated successfully!")        
+        raise web.seeother(web.ctx.path)
+
 
 class people_edits:
     def GET(self, username):

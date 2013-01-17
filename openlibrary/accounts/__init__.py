@@ -19,7 +19,7 @@ def get_current_user():
     return web.ctx.site.get_user()
 
 
-def find(username=None, lusername=None, email=None):
+def find(username=None, lusername=None, email=None, ia_email=None):
     """Finds an account by username, email or lowercase username.
     """
     def query(name, value):
@@ -34,6 +34,8 @@ def find(username=None, lusername=None, email=None):
         doc = query("lusername", lusername)
     elif email:
         doc = query("email", email)
+    elif ia_email:
+        doc = query("ia_email", ia_email)
     else:
         doc = None
         

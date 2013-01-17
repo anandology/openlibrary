@@ -6,8 +6,8 @@ from openlibrary.i18n import lgettext as _
 from openlibrary.utils.form import Form, Textbox, Password, Hidden, Validator, RegexpValidator
 from openlibrary import accounts
 
-def find_account(username=None, lusername=None, email=None):
-    return accounts.find(username=username, lusername=lusername, email=email)
+def find_account(username=None, lusername=None, email=None, ia_email=None):
+    return accounts.find(username=username, lusername=lusername, email=email, ia_email=ia_email)
 
 Login = Form(
     Textbox('username', description=_('Username'), klass='required'),
@@ -20,6 +20,7 @@ email_already_used = Validator(_("No user registered with this email address"), 
 email_not_already_used = Validator(_("Email already used"), lambda email: find_account(email=email) is None)
 email_not_disposable = Validator(_("Disposable email not permitted"), lambda email: not email.lower().endswith('dispostable.com'))
 username_validator = Validator(_("Username already used"), lambda username: not find_account(lusername=username.lower()))
+ia_email_not_already_linked = Validator(_("Email already used"), lambda email: find_account(ia_email=email) is None)
 
 vlogin = RegexpValidator(r"^[A-Za-z0-9-_]{3,20}$", _('Must be between 3 and 20 letters and numbers')) 
 vpass = RegexpValidator(r".{3,20}", _('Must be between 3 and 20 characters'))
