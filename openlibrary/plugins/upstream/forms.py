@@ -34,6 +34,12 @@ Register = Form(
     Password('password', description=_('Choose a Password'), klass='required', validators=[vpass])
 )
 
+# Used to create a new account and link to Internet Archive account
+NewAccount = Form(
+    Textbox('username', description=_('Choose a Username'), klass='required', help=_("Only letters and numbers, please, and at least 3 characters."), 
+        validators=[vlogin, username_validator])
+)
+
 forms.register = Register
 
 def verify_password(password):

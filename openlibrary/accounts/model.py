@@ -126,6 +126,11 @@ class Account(web.storage):
             return self.data.get("displayname") or self.username
         else:
             return self.username
+
+    def link(self, ia_email):
+        """Link account with Internet Archive account."""
+        self.ia_email = ia_email
+        self._save()
             
     def creation_time(self):
         d = self['created_on'].split(".")[0]

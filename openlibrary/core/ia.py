@@ -164,6 +164,7 @@ def _internal_api(method, **kw):
     jsontext = urllib.urlopen(url).read()
     return simplejson.loads(jsontext)
 
+
 def get_loans(username):
     """Returns loans of the archive.org user identified bu the username.
 
@@ -180,20 +181,25 @@ def get_loans(username):
     return loans
 
 def borrow(username, identifier, resource_type):
-    """Borrows a book via archive.org internal API.
+    """Borrows a book via archive.org internal API.    
     """
     data = _internal_api(
-        method="borrow",
-        username=username,
-        identifier=identifier,
+        method="borrow", 
+        username=username, 
+        identifier=identifier, 
         resource_type=resource_type)
     return data
 
 def return_bookreader_loan(username, identifier):
     return _internal_api(
-        method="return_bookreader_loan",
+        method="return_bookreader_loan", 
         username=username,
         identifier=identifier)
+
+def get_account_details(username):
+    return _internal_api(
+        method="get_account", 
+        username=username)
 
 class Loan(web.storage):
     def __init__(self, data):

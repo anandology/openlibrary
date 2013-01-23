@@ -420,27 +420,74 @@ class account_loans(delegate.page):
 
 class account_ia_auth_callback(delegate.page):
     path = "/account/ia-auth-callback"
-    
+
     def GET(self):
-        i = web.input(token="", username="", next="/", remember="")
-        if ia.verify_token(i.username, i.token):
-            account = accounts.find(ia_email=i.username)
-            print "account", account
-            if account:
-                expires = (i.remember and 3600*24*7) or ""
-                cookie = account.fake_login_cookie()
-                web.setcookie(config.login_cookie_name, cookie, expires=expires)
-                raise web.seeother(i.next)
-            else:
-                raise web.seeother("/account/link?" + urllib.urlencode(i))
+        i = web.input(token="", ia_username="", next="/", remember="")
+        self.process_input(i)
+
+        f = forms.Login()
+        return self.render(i.username, f, forms.NewAccount())
+
+    def render(self, ia_email, login_form, newaccount_form):
+        # generate a new token as the token came from archive.org is short-lived
+        token = ia.make_token(ia_email, 3600*12)
+        return render["account/link"](login_form, newaccount_form, ia_email, token)
+
+    def POST(self):
+        i = web.input(token="", ia_username="", next="/", action=None, ia_email=None, _method="POST")
+        self.process_input(i)
+
+        if i.get("action") == "link":
+            return self.POST_link(i)
+        elif i.get("action") == "new-account":
+            return self.POST_new_account(i)
+        else:
+            return self.render(i.ia_email, forms.Login(), forms.NewAccount())
+
+    def POST_link(self, i):
+        f = forms.Login()
+        if f.validates(i):
+            account = Account.find(i.username)
+            account.link(i.ia_email)
+            raise web.seeother(i.next)
+        else:
+            return self.render(f, i.ia_email)
+
+    def POST_new_account(self, i):
+        displayname = ia.get_account_details(i.ia_email).get('screenname') or i.username
+
+        f = forms.NewAccount()
+        if not f.validates(i):
+            return self.render(i.ia_email, forms.Login(), f)
+
+        account = Account.find(username=i.username)
+        accounts.register(username=i.username,
+                  email="",
+                  password="",
+                  displayname=displayname)
+        account = Account.find(username=i.username)
+        account.activate()
+        account.link(i.ia_email)
         raise web.seeother(i.next)
 
-class account_link(delegate.page):
-    path = "/account/link"
+    def process_input(self, i):
+        # for POST requests, we'll have ia_email
+        # and for GET requests, we'll have username
+        ia_email = i.get("ia_email") or i.get("ia_username")
 
-    def GET(self):
-        # TODO: Implement account linking page
-        raise web.notfound()
+        if not ia.verify_token(ia_email, i.token):
+            # Invalid token. Try login again.
+            return account_login().redirect(i.next)
+
+        account = accounts.find(ia_email=ia_email)
+
+        # If the token is valid and account is already linked, 
+        # redirect to the next URL after setting the login cookie
+        if account:
+            expires = (i.remember and 3600*24*7) or ""
+            cookie = account.fake_login_cookie()
+            web.setcookie(config.login_cookie_name, cookie, expires=expires)
+            raise web.seeother(i.next)
 
 class account_others(delegate.page):
     path = "(/account/.*)"

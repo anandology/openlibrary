@@ -1014,7 +1014,7 @@ class Loan:
         d = ia.borrow(username=ia_username, identifier=identifier, resource_type=self.resource_type)
         url = d.get('url')
         if not url:
-            raise Exception('Could not get loan link for edition %s type %s' % self.book_key, self.resource_type)
+            raise Exception('Could not get loan link for edition %s type %s' % (self.book_key, self.resource_type))
         return d['url']
 
         edition = web.ctx.site.get(self.book_key)
