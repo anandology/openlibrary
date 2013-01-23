@@ -4,7 +4,7 @@ $var title: $("Link Your Open Library Account")
 
 <div id="contentHead">
     <h1>$_("Link Your Account")</h1>
-    <div class="small sansserif grey">You are logged in as <b>$query_param("username")</b>.</div>
+    <div class="small sansserif grey">You are logged in as <b>$ia_email</b>.</div>
 </div>
 
 <style type="text/css">
@@ -81,7 +81,7 @@ $var title: $("Link Your Open Library Account")
                 <div class="label"><label for="username">$_("Username")</label> <span class="smaller lighter">Letters and numbers only please, and at least 3 characters.</span></div>
 
                 <div class="input">
-                    <input type="text" class="required small" id="username" name="username2" value="$(form2.username.value)" autocapitalize="off" autocorrect="off"/>
+                    <input type="text" class="required small" id="username" name="username" value="$(form2.username.value)" autocapitalize="off" autocorrect="off"/>
                     <span class="invalid clearfix" htmlfor="username">$form2.username.note</span>
                     <div class="sansserif smaller lighter">
                         Your URL: http://openlibrary.org/people/<span id="userUrl">username</span>

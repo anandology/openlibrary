@@ -426,7 +426,7 @@ class account_ia_auth_callback(delegate.page):
         self.process_input(i)
 
         f = forms.Login()
-        return self.render(i.username, f, forms.NewAccount())
+        return self.render(i.ia_username, f, forms.NewAccount())
 
     def render(self, ia_email, login_form, newaccount_form):
         # generate a new token as the token came from archive.org is short-lived
@@ -434,7 +434,7 @@ class account_ia_auth_callback(delegate.page):
         return render["account/link"](login_form, newaccount_form, ia_email, token)
 
     def POST(self):
-        i = web.input(token="", ia_username="", next="/", action=None, ia_email=None, _method="POST")
+        i = web.input(token="", ia_username="", next="/", remember="", action=None, ia_email=None, _method="POST")
         self.process_input(i)
 
         if i.get("action") == "link":
@@ -447,8 +447,9 @@ class account_ia_auth_callback(delegate.page):
     def POST_link(self, i):
         f = forms.Login()
         if f.validates(i):
-            account = Account.find(i.username)
+            account = accounts.find(i.username)
             account.link(i.ia_email)
+            self.setcookie(account, i.remember)
             raise web.seeother(i.next)
         else:
             return self.render(f, i.ia_email)
@@ -460,14 +461,14 @@ class account_ia_auth_callback(delegate.page):
         if not f.validates(i):
             return self.render(i.ia_email, forms.Login(), f)
 
-        account = Account.find(username=i.username)
         accounts.register(username=i.username,
-                  email="",
+                  email="%s@example.com" % uuid.uuid4(),
                   password="",
                   displayname=displayname)
-        account = Account.find(username=i.username)
+        account = accounts.find(username=i.username)
         account.activate()
         account.link(i.ia_email)
+        self.setcookie(account, i.remember)            
         raise web.seeother(i.next)
 
     def process_input(self, i):
@@ -484,10 +485,13 @@ class account_ia_auth_callback(delegate.page):
         # If the token is valid and account is already linked, 
         # redirect to the next URL after setting the login cookie
         if account:
-            expires = (i.remember and 3600*24*7) or ""
-            cookie = account.fake_login_cookie()
-            web.setcookie(config.login_cookie_name, cookie, expires=expires)
+            self.setcookie(account, i.remember)
             raise web.seeother(i.next)
+
+    def setcookie(self, account, remember=False):
+        expires = (remember and 3600*24*7) or ""
+        cookie = account.fake_login_cookie()
+        web.setcookie(config.login_cookie_name, cookie, expires=expires)
 
 class account_others(delegate.page):
     path = "(/account/.*)"
