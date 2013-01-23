@@ -237,11 +237,11 @@ class people_view:
 
     def POST_update_ia_email(self, account, i):
         user = account.get_user()
-        if not forms.vemail.valid(i.ia_email):
-            return render_template("admin/people/view", user, i, {"ia_email": forms.vemail.msg})
+        if i.ia_email and not forms.vemail.valid(i.ia_email):
+            return render_template("admin/people/view", account, i, {"ia_email": forms.vemail.msg})
 
-        if not forms.ia_email_not_already_linked.valid(i.ia_email):
-            return render_template("admin/people/view", user, i, 
+        if i.ia_email and not forms.ia_email_not_already_linked.valid(i.ia_email):
+            return render_template("admin/people/view", account, i, 
                 {"ia_email": "Internet Archive account with this email is already linked."})
         
         account.update_ia_email(i.ia_email)
