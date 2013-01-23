@@ -211,7 +211,7 @@ class Account(web.storage):
     def _save(self):
         """Saves this account in store.
         """
-        web.ctx.site.store[self._key] = self
+        web.ctx.site.store[self._key] = dict(self, _rev=None)
 
     @property
     def last_login(self):
