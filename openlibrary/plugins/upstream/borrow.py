@@ -92,7 +92,7 @@ class borrow(delegate.page):
         if user:
             #user.update_loan_status()
             loans = get_loans(user)
-        
+
         # Check if we recently did a return
         i = web.input(r=None)
         if i.r == 't':
@@ -149,7 +149,7 @@ class borrow(delegate.page):
                 if resource_type == 'bookreader':
                     raise web.seeother(make_bookreader_auth_link(loan.get_key(), edition.ocaid, '/stream/' + edition.ocaid, ol_host))
                 else:
-                    raise web.seeother(loan_link)
+                    raise web.seeother(loan_link or error_redirect)
             else:
                 # Send to the borrow page
                 raise web.seeother(error_redirect)
@@ -445,25 +445,10 @@ def get_loans(user):
         return []
 
 def get_edition_loans(edition):
-    # An edition can't have loans if it doens't have an IA ID. 
-    # This check avoids a lot of unnecessary queries.
     if edition.ocaid:
-        # Get the loans only if the book is borrowed. Since store.get requests
-        # are memcache-able, checking this will be very fast.
-        # This avoids making expensive infobase query for each book.
-        has_loan = web.ctx.site.store.get("ebooks" + edition['key'], {}).get("borrowed") == "true"
-        
-        # The implementation is changed to store the loan as loan-$ocaid.
-        # If there is a loan on this book, we'll find it.
-        # Sometimes there are multiple editions with same ocaid. This takes care of them as well. 
-        loan_record = web.ctx.site.store.get("loan-" + edition.ocaid)
-        if has_loan or loan_record:
-            if loan_record:
-                return [loan_record]
-            # for legacy reasons.
-            records = get_all_store_values(type='/type/loan', name='book', value=edition.key)
-            return records
-    return []
+        return ia.get_loans_of_book(edition.ocaid)
+    else:
+        return []
 
 def get_loan_link(edition, type):
     """Get the loan link, which may be an ACS4 link or BookReader link depending on the loan type"""

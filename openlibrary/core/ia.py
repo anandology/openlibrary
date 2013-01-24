@@ -180,6 +180,12 @@ def get_loans(username):
     loans = [loan for loan in loans if loan.book]
     return loans
 
+def get_loans_of_book(identifier):
+    data = _internal_api(
+        method="loan_status",
+        identifier=identifier)
+    return data['loans']
+
 def borrow(username, identifier, resource_type):
     """Borrows a book via archive.org internal API.    
     """
