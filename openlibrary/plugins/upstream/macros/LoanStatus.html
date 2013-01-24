@@ -9,12 +9,7 @@ $else:
   $ current_loans = []
   $ available_loans = []
 
-$ user_loan = None
-$if user:
-    $for current_loan in current_loans:
-        $if current_loan['user'] == user.key:
-            $ user_loan = current_loan
-            $ break
+$ user_loan = user and user.get_loan(page.ocaid)
 
 $ borrow_link = page.url() + '/borrow'
 

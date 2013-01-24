@@ -161,9 +161,12 @@ def _internal_api(method, **kw):
     logger.info("API call: %s", url)
 
     # TODO: handle errors
-    jsontext = urllib.urlopen(url).read()
-    return simplejson.loads(jsontext)
-
+    try:
+        stats.begin("archive.org", url=url)
+        jsontext = urllib.urlopen(url).read()
+        return simplejson.loads(jsontext)
+    finally:
+        stats.end()
 
 def get_loans(username):
     """Returns loans of the archive.org user identified bu the username.
@@ -182,7 +185,7 @@ def get_loans(username):
 
 def get_loans_of_book(identifier):
     data = _internal_api(
-        method="loan_status",
+        method="loan_status", 
         identifier=identifier)
     return data['loans']
 

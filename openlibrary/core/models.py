@@ -364,6 +364,26 @@ class User(Thing):
     @cache.memoize(engine="memcache", key=lambda self: ("d" + self.key, "l"))
     def _get_lists_cached(self):
         return self._get_lists_uncached(limit=100, offset=0)
+
+    def has_borrowed(self, ocaid):
+        """Returns True if the book with given ocaid is borrowed by this user."""
+        return bool(self.get_loan(ocaid))
+
+    def get_loan(self, ocaid):
+        """Returns the loan with the matching ocaid.
+        """
+        loans = self.get_loans()
+        for loan in loans:
+            if loan['identifier'] == ocaid:
+                return loan
+
+    def get_loans(self):
+        """Returns all loans of this user.
+        """
+        ia_email = self.get_account().get("ia_email")
+        if not ia_email:
+            return []
+        return ia.get_loans(ia_email)
         
     def _get_lists_uncached(self, seed=None, limit=100, offset=0):
         q = {
