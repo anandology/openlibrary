@@ -181,6 +181,15 @@ class account_login(delegate.page):
         url = ia.make_ia_url("/account/auth.php", next=callback, redirect=redirect)
         raise web.seeother(url)
 
+class account_logout(delegate.page):
+    path = "/account/logout"
+
+    def POST(self):
+        referer = web.ctx.env.get('HTTP_REFERER', web.ctx.home + "/")
+        web.setcookie(config.login_cookie_name, "", expires=-1)
+        url = ia.make_ia_url("/account/logout.php", next=referer)
+        return web.seeother(url)
+
 class account_verify(delegate.page):
     """Verify user account.
     """
