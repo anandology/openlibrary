@@ -181,7 +181,7 @@ class Edition(models.Edition):
         current_loans = borrow.get_edition_loans(self)
         return (current_loans, self._get_available_loans(current_loans))
         
-    def get_available_loans(self):
+    def get_available_loans(self, _cache=None):
         """
         Get the resource types currently available to be loaned out for this edition.  Does NOT
         take into account the user's status (e.g. number of books out, in-library status, etc).
@@ -191,7 +191,7 @@ class Edition(models.Edition):
         
         size may be None"""
         
-        return self._get_available_loans(borrow.get_edition_loans(self))
+        return self._get_available_loans(borrow.get_edition_loans(self, _cache=_cache))
         
     def _get_available_loans(self, current_loans):
         
@@ -642,20 +642,7 @@ class User(models.User):
             return web.ctx.site._request('/count_edits_by_user', data={"key": self.key})
         else:
             return 0
-            
-    def get_loan_count(self):
-        return len(borrow.get_loans(self))
-        
-    def get_loans(self):
-        self.update_loan_status()
-        return borrow.get_loans(self)
-        
-    def update_loan_status(self):
-        """Update the status of this user's loans."""
-        loans = borrow.get_loans(self)
-        for resource_id in [loan['resource_id'] for loan in loans]:
-            borrow.update_loan_status(resource_id)
-            
+                                
 class UnitParser:
     """Parsers values like dimentions and weight.
 

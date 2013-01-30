@@ -85,13 +85,10 @@ class borrow(delegate.page):
         if not edition:
             raise web.notfound()
 
-        #edition.update_loan_status()
-            
         loans = []
         user = accounts.get_current_user()
         if user:
-            #user.update_loan_status()
-            loans = get_loans(user)
+            loans = user.get_loans(_cache="update")
 
         # Check if we recently did a return
         i = web.input(r=None)
@@ -434,19 +431,11 @@ def get_all_loans():
     return get_all_store_values(type='/type/loan')
 
 def get_loans(user):
-    # return web.ctx.site.store.values(type='/type/loan', name='user', value=user.key)
-    #return get_all_store_values(type='/type/loan', name='user', value=user.key)    
-    account = user.get_account()
+    return user.get_loans()
 
-    ia_email = account.get("ia_email")
-    if ia_email:
-        return ia.get_loans(ia_email)
-    else:
-        return []
-
-def get_edition_loans(edition):
+def get_edition_loans(edition, _cache=None):
     if edition.ocaid:
-        return ia.get_loans_of_book(edition.ocaid)
+        return ia.get_loans_of_book(edition.ocaid, _cache=_cache)
     else:
         return []
 

@@ -168,6 +168,7 @@ def _internal_api(method, **kw):
     finally:
         stats.end()
 
+@cache.memoize(engine="memcache", key=lambda identifier: "user-loans-%s" % identifier, expires=60)
 def get_loans(username):
     """Returns loans of the archive.org user identified bu the username.
 
@@ -183,6 +184,7 @@ def get_loans(username):
     loans = [loan for loan in loans if loan.book]
     return loans
 
+@cache.memoize(engine="memcache", key=lambda identifier: "book-loans-%s" % identifier, expires=60)
 def get_loans_of_book(identifier):
     data = _internal_api(
         method="loan_status", 

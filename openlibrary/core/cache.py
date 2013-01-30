@@ -410,6 +410,19 @@ class memoize:
         @cache.memoize(engine="memory", key=lambda key: (key, "doc"))
         def get_page(key):
             pass
+
+    Cache Behavior:
+
+    By default if the required value is already available in the cache, it is returned
+    instead of calling the function again.
+
+    This behavior can be changed by passing a keyword argument _cache.
+
+    * ``_cache=None``: default behavior
+    * ``_cache=False``: cache is bypassed completely
+    * ``_cache="update"``: calls the function, updates the cache and returns the value
+    * ``_cache="delete"``: deletes the entry from cache and returns None. The function is not called.
+
     """
     def __init__(self, engine="memory", key=None, expires=0, background=False, cacheable=None):
         self.cache = _get_cache(engine)
@@ -433,14 +446,30 @@ class memoize:
             If this is the first call with these arguments, function :attr:`f` is called and the return value is cached.
             Otherwise, value from the cache is returned.
             """
+            _cache = kwargs.pop("_cache", False)
             key = self.keyfunc(*args, **kwargs)
-            value = self.cache_get(key)
+
+            value = None
+
+            update_cache = False
+
+            if _cache == "delete":
+                self.cache_delete(key)
+                return None
+            elif _cache == "update":
+                value = None # force cache update
+            elif _cache == False:
+                update_cache = False
+            else:
+                value = self.cache_get(key)
+
             if value is None:
                 value = f(*args, **kwargs)
-                self.cache_set(key, value)
+                if update_cache:
+                    self.cache_set(key, value)
             return value
         return func
-            
+
     def cache_get(self, key):
         """Reads value of a key from the cache.
         

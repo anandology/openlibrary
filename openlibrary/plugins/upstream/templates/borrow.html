@@ -4,7 +4,7 @@ $var title: $page.title
 
 $ _x = ctx.setdefault('bodyid', 'plain')
 
-$ available_loans = page.get_available_loans()
+$ available_loans = page.get_available_loans(_cache="update")
 $ user_can_borrow_this = False
 $ meta_fields = page.get_ia_meta_fields()
 $if meta_fields.has_key('collection'):

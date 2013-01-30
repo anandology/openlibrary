@@ -14,6 +14,7 @@ import helpers as h
 from openlibrary.plugins.upstream.utils import get_history
 from openlibrary.plugins.upstream.account import Account
 from openlibrary import accounts
+from openlibrary.core import ia
 
 # relative imports
 from lists.model import ListMixin, Seed
@@ -377,13 +378,16 @@ class User(Thing):
             if loan['identifier'] == ocaid:
                 return loan
 
-    def get_loans(self):
+    def get_loans(self, _cache=None):
         """Returns all loans of this user.
         """
         ia_email = self.get_account().get("ia_email")
         if not ia_email:
             return []
-        return ia.get_loans(ia_email)
+        return ia.get_loans(ia_email, _cache=_cache)
+
+    def get_loan_count(self):
+        return len(self.get_loans())
         
     def _get_lists_uncached(self, seed=None, limit=100, offset=0):
         q = {

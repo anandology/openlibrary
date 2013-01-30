@@ -414,8 +414,7 @@ class account_loans(delegate.page):
     @require_login
     def GET(self):
         user = accounts.get_current_user()
-        user.update_loan_status()
-        loans = borrow.get_loans(user)
+        loans = user.get_loans(_cache="update")
         return render['account/borrow'](user, loans)
 
 class account_ia_auth_callback(delegate.page):
