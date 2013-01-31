@@ -49,52 +49,8 @@ class account_create(delegate.page):
     path = "/account/create"
 
     def GET(self):
-        f = forms.Register()
-
-        recap_plugin_active = 'recaptcha' in config.get('plugins')
-        if recap_plugin_active:
-            public_key = config.plugin_recaptcha.public_key
-            private_key = config.plugin_recaptcha.private_key
-            recap = recaptcha.Recaptcha(public_key, private_key)
-        else:
-            recap = None
-
-        return render['account/create'](f, recaptcha=recap)
-
-    def POST(self):
-        i = web.input('email', 'password', 'username', agreement="no")
-        i.displayname = i.get('displayname') or i.username
-
-        recap_plugin_active = 'recaptcha' in config.get('plugins')
-        if recap_plugin_active:
-            public_key = config.plugin_recaptcha.public_key
-            private_key = config.plugin_recaptcha.private_key
-            recap = recaptcha.Recaptcha(public_key, private_key)
-
-            if not recap.validate():
-                return 'Recaptcha solution was incorrect. Please <a href="javascript:history.back()">go back</a> and try again.'
-
-
-        f = forms.Register()
-
-        if not f.validates(i):
-            return render['account/create'](f)
-
-        if i.agreement != "yes":
-            f.note = utils.get_error("account_create_tos_not_selected")
-            return render['account/create'](f)
-
-        try:
-            accounts.register(username=i.username,
-                              email=i.email,
-                              password=i.password,
-                              displayname=i.displayname)
-        except ClientException, e:
-            f.note = str(e)
-            return render['account/create'](f)
-
-        send_verification_email(i.username, i.email)
-        return render['account/verify'](username=i.username, email=i.email)
+        # redirect to archive.org sign up page
+        raise web.redirect(ia.make_ia_url("/account/login.createaccount.php", source=openlibrary))
 
 del delegate.pages['/account/register']
 
