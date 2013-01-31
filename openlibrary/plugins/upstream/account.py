@@ -50,7 +50,7 @@ class account_create(delegate.page):
 
     def GET(self):
         # redirect to archive.org sign up page
-        raise web.redirect(ia.make_ia_url("/account/login.createaccount.php", source=openlibrary))
+        raise web.redirect(ia.make_ia_url("/account/login.createaccount.php", source="openlibrary"))
 
 del delegate.pages['/account/register']
 
