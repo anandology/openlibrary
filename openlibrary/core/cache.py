@@ -419,7 +419,7 @@ class memoize:
     This behavior can be changed by passing a keyword argument _cache.
 
     * ``_cache=None``: default behavior
-    * ``_cache=False``: cache is bypassed completely
+    * ``_cache="ignore"``: cache is bypassed completely
     * ``_cache="update"``: calls the function, updates the cache and returns the value
     * ``_cache="delete"``: deletes the entry from cache and returns None. The function is not called.
 
@@ -451,17 +451,25 @@ class memoize:
 
             value = None
 
-            update_cache = False
+            update_cache = True
 
             if _cache == "delete":
+                # delete the entry from cache and return
                 self.cache_delete(key)
                 return None
             elif _cache == "update":
-                value = None # force cache update
-            elif _cache == False:
+                # force recomputation and cache update
+                value = None 
+                update_cache = True
+            elif _cache == "ignore":
+                # behave as if there is no cache
+                value = None
                 update_cache = False
             else:
+                # The default behavior. 
+                # Use the value if present in cache
                 value = self.cache_get(key)
+                update_cache = True
 
             if value is None:
                 value = f(*args, **kwargs)
