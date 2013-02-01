@@ -199,7 +199,7 @@ def borrow(username, identifier, resource_type):
         username=username, 
         identifier=identifier, 
         resource_type=resource_type)
-    return data
+    return Loan(data)
 
 def return_bookreader_loan(username, identifier):
     return _internal_api(
@@ -226,6 +226,7 @@ class Loan(web.storage):
         else:
             self.expiry = None
 
+        self.uuid = self.loan_id
         self.key = "loan-" + self.identifier
         self._key = self.key
 

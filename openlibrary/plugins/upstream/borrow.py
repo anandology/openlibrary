@@ -1,6 +1,5 @@
 """Handlers for borrowing books"""
 
-import copy
 import datetime, time
 import hmac
 import re
@@ -20,15 +19,10 @@ from infogami.infobase.utils import parse_datetime
 import utils
 from utils import render_template
 
-from openlibrary.core import inlibrary
 from openlibrary.core import stats
 from openlibrary.core import msgbroker
 from openlibrary.core import ia
 from openlibrary import accounts
-
-from lxml import etree
-
-import acs4
 
 logger = logging.getLogger("openlibrary.borrow")
 
@@ -125,17 +119,8 @@ class borrow(delegate.page):
                 raise web.seeother(error_redirect)
             
             if user_can_borrow_edition(user, edition, resource_type):
-                loan = Loan(user.key, key, resource_type)
-                if resource_type == 'bookreader':
-                    # The loan expiry should be utc isoformat
-                    loan.expiry = datetime.datetime.utcfromtimestamp(time.time() + bookreader_loan_seconds).isoformat()
-                loan_link = loan.make_offer() # generate the link and record that loan offer occurred
-                                
-                # $$$ Record fact that user has done a borrow - how do I write into user? do I need permissions?
-                # if not user.has_borrowed:
-                #   user.has_borrowed = True
-                #   user.save()
-                
+                loan_link = self.make_offer(user.key, key, resource_type)
+
                 if resource_type == 'bookreader':
                     stats.increment('loans.bookreader')
                 elif resource_type == 'pdf':
@@ -144,7 +129,9 @@ class borrow(delegate.page):
                     stats.increment('loans.epub')
                     
                 if resource_type == 'bookreader':
-                    raise web.seeother(make_bookreader_auth_link(loan.get_key(), edition.ocaid, '/stream/' + edition.ocaid, ol_host))
+                    identifier = edition.ocaid
+                    loan_key = "loan-" + identifier
+                    raise web.seeother(make_bookreader_auth_link(loan_key, identifier, '/stream/' + identifier, ol_host))
                 else:
                     raise web.seeother(loan_link or error_redirect)
             else:
@@ -180,13 +167,28 @@ class borrow(delegate.page):
             
         elif i.action == 'read':
             # Look for loans for this book
-            loans = get_loans(user)
+            loans = user.get_loans()
             for loan in loans:
                 if loan['book'] == edition.key:
                     raise web.seeother(make_bookreader_auth_link(loan['_key'], edition.ocaid, '/stream/' + edition.ocaid, ol_host))
             
         # Action not recognized
         raise web.seeother(error_redirect)
+
+    def make_offer(self, user_key, book_key, resource_type):
+        a = web.ctx.site.get(user_key).get_account()
+        ia_email = a.get("ia_email")
+
+        book = web.ctx.site.get(book_key)
+        identifier = book.ocaid or None
+        
+        d = ia.borrow(username=ia_email, identifier=identifier, resource_type=resource_type)
+        url = d.get('url')
+        if not url:
+            raise Exception('Could not get loan link for edition %s type %s' % (book_key, resource_type))
+
+        on_loan_update(d)
+        return d['url']
         
 # Handler for /books/{bookid}/{title}/_borrow_status
 class borrow_status(delegate.page):
@@ -251,7 +253,7 @@ class borrow_admin(delegate.page):
         user_loans = []
         user = accounts.get_current_user()
         if user:
-            user_loans = get_loans(user)
+            user_loans = user.get_loans()
             
         return render_template("borrow_admin", edition, edition_loans, ebook, user_loans, web.ctx.ip)
         
@@ -262,42 +264,12 @@ class borrow_admin(delegate.page):
         i = web.input(action=None, loan_key=None)
 
         if i.action == 'delete' and i.loan_key:
-            delete_loan(i.loan_key)
+            #delete_loan(i.loan_key)
+            # TODO: The loan info is stored on archive.org. Need to delete it from there.
+            pass
             
         raise web.seeother(web.ctx.path + '/borrow_admin')
         
-class borrow_admin_no_update(delegate.page):
-    path = "(/books/OL\d+M)/borrow_admin_no_update"
-    
-    def GET(self, key):
-        if not is_admin():
-            return render_template('permission_denied', web.ctx.path, "Permission denied.")
-    
-        edition = web.ctx.site.get(key)
-        
-        if not edition:
-            raise web.notfound()
-
-        edition_loans = get_edition_loans(edition)
-            
-        user_loans = []
-        user = accounts.get_current_user()
-        if user:
-            user_loans = get_loans(user)
-            
-        return render_template("borrow_admin_no_update", edition, edition_loans, user_loans, web.ctx.ip)
-        
-    def POST(self, key):
-        if not is_admin():
-            return render_template('permission_denied', web.ctx.path, "Permission denied.")
-            
-        i = web.input(action=None, loan_key=None)
-
-        if i.action == 'delete' and i.loan_key:
-            delete_loan(i.loan_key)
-            
-        raise web.seeother(web.ctx.path) # $$$ why doesn't this redirect to borrow_admin_no_update?
-
         
 # Handler for /iauth/{itemid}
 class ia_auth(delegate.page):
@@ -321,29 +293,6 @@ class ia_auth(delegate.page):
             output = '%s ( %s );' % (i.callback, output)
         
         return delegate.RawText(output, content_type=content_type)
-
-# Handler for /borrow/receive_notification - receive ACS4 status update notifications
-class borrow_receive_notification(delegate.page):
-    path = r"/borrow/receive_notification"
-
-    def GET(self):
-        web.header('Content-Type', 'application/json')
-        output = simplejson.dumps({'success': False, 'error': 'Only POST is supported'})
-        return delegate.RawText(output, content_type='application/json')
-
-    def POST(self):
-        data = web.data()
-        try:
-            notify_xml = etree.fromstring(data)
-
-            # XXX verify signature?  Should be acs4 function...
-            notify_obj = acs4.el_to_o(notify_xml)
-
-            # print simplejson.dumps(notify_obj, sort_keys=True, indent=4)
-            output = simplejson.dumps({'success':True})
-        except Exception, e:
-            output = simplejson.dumps({'success':False, 'error': str(e)})
-        return delegate.RawText(output, content_type='application/json')
         
 ########## Public Functions
 
@@ -399,36 +348,9 @@ def get_bookreader_stream_url(itemid):
 @public
 def get_bookreader_host():
     return bookreader_host
-    
-    
         
 ########## Helper Functions
 
-def get_all_store_values(**query):
-    """Get all values by paging through all results. Note: adds store_key with the row id."""
-    query = copy.deepcopy(query)
-    if not query.has_key('limit'):
-        query['limit'] = 500
-    query['offset'] = 0
-    values = []
-    got_all = False
-    
-    while not got_all:
-        #new_values = web.ctx.site.store.values(**query)
-        new_items = web.ctx.site.store.items(**query)
-        for new_item in new_items:
-            new_item[1].update({'store_key': new_item[0]})
-            # XXX-Anand: Handling the existing loans
-            new_item[1].setdefault("ocaid", None)
-            values.append(new_item[1])
-        if len(new_items) < query['limit']:
-            got_all = True
-        query['offset'] += len(new_items)
-    return values
-
-def get_all_loans():
-    # return web.ctx.site.store.values(type='/type/loan')
-    return get_all_store_values(type='/type/loan')
 
 def get_loans(user):
     return user.get_loans()
@@ -438,34 +360,6 @@ def get_edition_loans(edition, _cache=None):
         return ia.get_loans_of_book(edition.ocaid, _cache=_cache)
     else:
         return []
-
-def get_loan_link(edition, type):
-    """Get the loan link, which may be an ACS4 link or BookReader link depending on the loan type"""
-    global content_server
-
-    resource_id = edition.get_lending_resource_id(type)
-    
-    if type == 'bookreader':
-        # link to bookreader
-        return (resource_id, get_bookreader_stream_url(edition.ocaid))
-        
-    if type in ['pdf','epub']:
-        # ACS4
-        if not content_server:
-            if not config.content_server:
-                # $$$ log
-                return None
-            content_server = ContentServer(config.content_server)
-            
-        if not resource_id:
-            raise Exception('Could not find resource_id for %s - %s' % (edition.key, type))
-        return (resource_id, content_server.get_loan_link(resource_id))
-        
-    raise Exception('Unknown resource type %s for loan of edition %s', edition.key, type)
-    
-# def get_bookreader_link(edition):
-#     """Returns the link to the BookReader for the edition"""
-#     return "%s/%s" % (bookreader_stream_base, edition.ocaid)
 
 def get_loan_key(resource_id):
     """Get the key for the loan associated with the resource_id"""
@@ -909,111 +803,3 @@ def on_loan_delete(loan):
 
     msgbroker.send_message("loan-completed", loan)
 
-########## Classes
-
-class Loan:
-    """The model class for Loan. 
-    
-    This is used only to make a loan offer. In other cases, the dict from store is used directly.
-    """
-    def __init__(self, user_key, book_key, resource_type, loaned_at = None):
-        # store a uuid in the loan so that the loan can be uniquely identified. Required for stats.
-        self.uuid = uuid.uuid4().hex
-        self.key = None # Set after resource_id is initialized
-
-        self.rev = 1 # This triggers the infobase consistency check - if there is an existing record on save
-                     # the consistency check will fail (revision mismatch)
-        self.user_key = user_key
-        self.book_key = book_key
-        self.ocaid = None
-        self.resource_type = resource_type
-        self.type = '/type/loan'
-        self.resource_id = None
-        self.loan_link = None
-        self.expiry = None # We leave the expiry blank until we get confirmation of loan from ACS4
-        
-        if loaned_at is not None:
-            self.loaned_at = loaned_at
-        else:
-            self.loaned_at = time.time()
-        
-    def get_key(self):
-        return self.key
-
-    def get_dict(self):
-        return { '_key': self.get_key(),
-                 '_rev': self.rev,
-                 'type': '/type/loan',
-                 'user': self.user_key, 
-                 'book': self.book_key,
-                 'ocaid': self.ocaid, 
-                 'expiry': self.expiry,
-                 'uuid': self.uuid,
-                 'loaned_at': self.loaned_at, 'resource_type': self.resource_type,
-                 'resource_id': self.resource_id, 'loan_link': self.loan_link }
-                 
-    def set_dict(self, loan_dict):
-        self.rev = loan_dict['_rev'] 
-        self.user_key = loan_dict['user']
-        self.type = loan_dict['type']
-        self.book_key = loan_dict['book']
-        self.resource_type = loan_dict['resource_type']
-        self.expiry = loan_dict['expiry']
-        self.loaned_at = loan_dict['loaned_at']
-        self.resource_id = loan_dict['resource_id']
-        self.loan_link = loan_dict['loan_link']
-        self.uuid = loan_link.get('uuid')
-        
-    def save(self):
-        web.ctx.site.store[self.get_key()] = self.get_dict()        
-        on_loan_update(self.get_dict())
-        
-    def remove(self):
-        web.ctx.site.delete(self.get_key())
-        on_loan_delete(self.get_dict())
-
-    def get_ia_username(self):
-        a = web.ctx.site.get(self.user_key).get_account()
-        return a.get("ia_email")
-
-    def get_identifier(self):
-        book = web.ctx.site.get(self.book_key)
-        return book.ocaid or None
-        
-    def make_offer(self):
-        """Create loan url and record that loan was offered.  Returns the link URL that triggers
-           Digital Editions to open or the link for the BookReader."""
-        ia_username = self.get_ia_username()
-        identifier = self.get_identifier()
-        d = ia.borrow(username=ia_username, identifier=identifier, resource_type=self.resource_type)
-        url = d.get('url')
-        if not url:
-            raise Exception('Could not get loan link for edition %s type %s' % (self.book_key, self.resource_type))
-        return d['url']
-
-        edition = web.ctx.site.get(self.book_key)
-        resource_id, loan_link = get_loan_link(edition, self.resource_type)
-        if not loan_link:
-            raise Exception('Could not get loan link for edition %s type %s' % self.book_key, self.resource_type)
-        self.loan_link = loan_link
-        self.resource_id = resource_id
-        self.key = "loan-" + edition.ocaid
-        self.ocaid = edition.ocaid or None
-        self.save()
-        return self.loan_link
-        
-class ContentServer:
-    def __init__(self, config):
-        self.host = config.host
-        self.port = config.port
-        self.password = config.password
-        self.distributor = config.distributor
-        
-        # Contact server to get shared secret for signing
-        result = acs4.get_distributor_info(self.host, self.password, self.distributor)
-        self.shared_secret = result['sharedSecret']
-        self.name = result['name']
-
-    def get_loan_link(self, resource_id):
-        loan_link = acs4.mint(self.host, self.shared_secret, resource_id, 'enterloan', self.name, port = self.port)
-        return loan_link

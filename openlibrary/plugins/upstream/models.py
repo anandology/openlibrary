@@ -125,13 +125,10 @@ class Edition(models.Edition):
             return
         v = meta_fields['collection']
         return 'printdisabled' in v or 'lendinglibrary' in v
-
-#      def is_lending_library(self):
-#         collections = self.get_ia_collections()
-#         return 'lendinglibrary' in collections
         
     def get_lending_resources(self):
-        """Returns the loan resource identifiers (in meta.xml format for ACS4 resources) for books hosted on archive.org
+        """Returns the loan resource identifiers (in meta.xml format for ACS4
+        resources) for books hosted on archive.org.
         
         Returns e.g. ['bookreader:lettertoannewarr00west',
                       'acs:epub:urn:uuid:0df6f344-7ce9-4038-885e-e02db34f2891',
@@ -234,19 +231,8 @@ class Edition(models.Edition):
     
     def update_loan_status(self):
         """Update the loan status"""
-        # $$$ search in the store and update
-        loans = borrow.get_edition_loans(self)
-        for loan in loans:
-            borrow.update_loan_status(loan['resource_id'])
-            
-#         urn_pattern = r'acs:\w+:(.*)'
-#         for ia_urn in self.get_lending_resources():
-#             if ia_urn.startswith('acs:'):
-#                 resource_id = re.match(urn_pattern, ia_urn).group(1)
-#             else:
-#                 resource_id = ia_urn
-# 
-#             borrow.update_loan_status(resource_id)
+        # legacy code. 
+        pass
 
     def _process_identifiers(self, config, names, values):
         id_map = {}
