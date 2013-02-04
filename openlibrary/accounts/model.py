@@ -100,7 +100,10 @@ class Account(web.storage):
     @property
     def username(self):
         return self._key.split("/")[-1]
-        
+
+    def get_ia_email(self):
+        return self.get("ia_email")
+
     def get_edit_count(self):
         user = self.get_user()
         return user and user.get_edit_count() or 0

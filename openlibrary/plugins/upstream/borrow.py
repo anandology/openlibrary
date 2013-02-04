@@ -158,7 +158,7 @@ class borrow(delegate.page):
 
             account = user.get_account()
             # They have it -- return it
-            ia.return_bookreader_loan(account.get("ia_email"), user_loan['identifier'])
+            ia.return_bookreader_loan(account.get_ia_email(), user_loan['identifier'])
             
             # Show the page with "you've returned this"
             # $$$ this would do better in a session variable that can be cleared
@@ -177,7 +177,7 @@ class borrow(delegate.page):
 
     def make_offer(self, user_key, book_key, resource_type):
         a = web.ctx.site.get(user_key).get_account()
-        ia_email = a.get("ia_email")
+        ia_email = a.get_ia_email()
 
         book = web.ctx.site.get(book_key)
         identifier = book.ocaid or None
