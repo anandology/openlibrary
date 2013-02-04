@@ -8,15 +8,12 @@ $var title: $_("Settings")
 </div>
 
 <div id="contentBody">
-    <p class="sansserif larger"><a href="/account/password">$_("Change Password")</a></p>
-    <p class="sansserif larger"><a href="/account/email">$_("Update Email Address")</a></p>
-    <p class="sansserif larger"><a href="/account/notifications">$_("Your Notifications")</a></p>
-    <p class="sansserif larger"><a href="$user.key">$_("View")</a> $_("or") <a href="$user.key?m=edit">$_("Edit")</a> $_("Your Profile Page")</p>
 
-    <!--
-    <p class="sansserif larger"><a href="/account/lists">$("Your Lists")</a></p>
-    -->
+<p class="sansserif larger">
+    You are logged as Internet Archive user <strong>$user.get_account().get("ia_email")</strong>.
     <br/>
-    
-    <p class="sansserif larger"><a href="/account/delete" class="fixthis">$_("Delete Your Account")</a> <i>coming soon...</i></p>
+    Please see <a href="http://archive.org/account/">Account Settings on Internet Archive</a> if you would like to change any settings.</a>
+</p>
+
+<p class="sansserif larger"><a href="$user.key">$_("View")</a> $_("or") <a href="$user.key?m=edit">$_("Edit")</a> $_("Your Open Profile Page")</p>
 </div>
