@@ -101,9 +101,6 @@ class Account(web.storage):
     def username(self):
         return self._key.split("/")[-1]
 
-    def get_ia_email(self):
-        return self.get("ia_email")
-
     def get_edit_count(self):
         user = self.get_user()
         return user and user.get_edit_count() or 0
@@ -130,7 +127,10 @@ class Account(web.storage):
         else:
             return self.username
 
-    def link(self, ia_email):
+    def get_ia_email(self):
+        return self.get("ia_email")            
+
+    def set_ia_email(self, ia_email):
         """Link account with Internet Archive account."""
         self.ia_email = ia_email
         self._save()
@@ -158,9 +158,6 @@ class Account(web.storage):
     
     def update_email(self, email):
         web.ctx.site.update_account(self.username, email=email)
-
-    def update_ia_email(self, ia_email):
-        web.ctx.site.update_account(self.username, ia_email=ia_email)
         
     def send_verification_email(self):
         send_verification_email(self.username, self.email)

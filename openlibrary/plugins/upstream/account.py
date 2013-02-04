@@ -412,7 +412,7 @@ class account_ia_auth_callback(delegate.page):
         f = forms.Login()
         if f.validates(i):
             account = accounts.find(i.username)
-            account.link(i.ia_email)
+            account.set_ia_email(i.ia_email)
             self.setcookie(account, i.remember)
             raise web.seeother(i.next)
         else:

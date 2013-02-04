@@ -244,7 +244,7 @@ class people_view:
             return render_template("admin/people/view", account, i, 
                 {"ia_email": "Internet Archive account with this email is already linked."})
         
-        account.update_ia_email(i.ia_email)
+        account.set_ia_email(i.ia_email)
         add_flash_message("info", "Internet Archive account email is updated successfully!")        
         raise web.seeother(web.ctx.path)
 
