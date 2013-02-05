@@ -207,7 +207,7 @@ class people_view:
         if not forms.email_not_already_used.valid(i.email):
             return render_template("admin/people/view", user, i, {"email": forms.email_not_already_used.msg})
 
-        account.update_ia_email(i.email)
+        account.update_email(i.email)
         add_flash_message("info", "Email updated successfully!")
         raise web.seeother(web.ctx.path)
     

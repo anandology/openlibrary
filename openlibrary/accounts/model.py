@@ -14,7 +14,7 @@ from infogami.utils.view import render_template
 from infogami.infobase.client import ClientException
 from openlibrary.core import helpers as h
 from openlibrary.core import support
-
+from openlibrary.core import ia
 
 def sendmail(to, msg, cc=None):
     cc = cc or []
@@ -128,12 +128,19 @@ class Account(web.storage):
             return self.username
 
     def get_ia_email(self):
-        return self.get("ia_email")            
+        ia_userid = self.get_ia_userid()
+        return ia_userid and ia.userid_to_username(ia_userid)
 
     def set_ia_email(self, ia_email):
-        """Link account with Internet Archive account."""
-        self.ia_email = ia_email
+        ia_userid = ia.username_to_userid(ia_email)
+        self.set_ia_userid(ia_userid)
+
+    def set_ia_userid(self, ia_userid):
+        self.ia_userid = ia_userid
         self._save()
+
+    def get_ia_userid(self):
+        return self.get("ia_userid")
             
     def creation_time(self):
         d = self['created_on'].split(".")[0]

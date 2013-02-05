@@ -168,7 +168,7 @@ def _internal_api(method, **kw):
     finally:
         stats.end()
 
-@cache.memoize(engine="memcache", key=lambda identifier: "user-loans-%s" % identifier, expires=60)
+@cache.memoize(engine="memcache", key=lambda username: "user-loans-%s" % username, expires=60)
 def get_loans(username):
     """Returns loans of the archive.org user identified bu the username.
 
@@ -208,9 +208,17 @@ def return_bookreader_loan(username, identifier):
         identifier=identifier)
 
 def get_account_details(username):
-    return _internal_api(
-        method="get_account", 
-        username=username)
+    """Fetches Internet Archive account details from username.
+    """
+    return _internal_api(method="get_account", username=username)
+
+def username_to_userid(username):
+    d = _internal_api(method="get_account", username=username)
+    return d and d['userid']
+
+def userid_to_username(userid):
+    d = _internal_api(method="get_account", userid=userid)
+    return d and d['username']
 
 class Loan(web.storage):
     def __init__(self, data):

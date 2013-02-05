@@ -2,6 +2,7 @@ from .model import * #XXX: Fix this. Import only specific names
 
 import web
 from infogami.infobase.client import ClientException
+from openlibrary.core import ia
 
 ## Unconfirmed functions (I'm not sure that these should be here)
 def get_group(name):
@@ -35,7 +36,9 @@ def find(username=None, lusername=None, email=None, ia_email=None):
     elif email:
         doc = query("email", email)
     elif ia_email:
-        doc = query("ia_email", ia_email)
+        # Only ia-userid is stored in the database as email can be modified.
+        ia_userid = ia.username_to_userid(ia_email)
+        doc = ia_userid and query("ia_userid", ia_userid)
     else:
         doc = None
         
