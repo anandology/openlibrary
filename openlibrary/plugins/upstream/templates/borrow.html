@@ -221,7 +221,7 @@ $if has_returned_recently and not page.key in [loan['book'] for loan in loans]:
                 <div class="Tools borrow" id="listsWork">
                     $:render_template("lists/widget", page, user_lists_only=True)
                     
-                    <p id="borrowList" class="hidden">to keep an eye on it, or <a href="/subjects/lending_library">browse more titles</a>.</p>
+                    <p id="borrowList" class="hidden">to keep an eye on it, or <a href="/borrow">browse more titles</a>.</p>
                 </div>
                 <!-- 
                 <p id="postBorrowList"><strong>OK!</strong> This title has been added to your <a href="LIST URL">LIST NAME</a> list.<br/>
