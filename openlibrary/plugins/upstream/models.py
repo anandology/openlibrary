@@ -216,17 +216,7 @@ class Edition(models.Edition):
                 return '1-%s' % loan['resource_type']
             else:
                 return '2-%s' % loan['resource_type']        
-        loans = sorted(loans, key=loan_key)
-                    
-        # For each possible loan, check if it is available
-        # We shouldn't be out of sync (we already checked get_edition_loans for current loans) but we fail safe, for example
-        # the book may have been borrowed in a dev instance against the live ACS4 server
-        for loan in loans:
-            if borrow.is_loaned_out(loan['resource_id']):
-                # Only a single loan of an item is allowed
-                # $$$ log out of sync state
-                return []
-                    
+        loans = sorted(loans, key=loan_key)                    
         return loans
     
     def update_loan_status(self):
