@@ -226,7 +226,11 @@ class Loan(web.storage):
 
         self.book = self._find_ol_key(self.identifier)
         self.ocaid = self.identifier
-        self.loan_link = ""
+        
+        # loan_link is specified in the data when the loan is not fulfilled yet.
+        # initializing it to empty string when there is loan_link specified.
+        self.setdefault("loan_link", "")
+
         self.resource_type = self.format
         self.loaned_at = self.datetime_to_float(h.parse_datetime(self.created))
         if self.fulfilled:
