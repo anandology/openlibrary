@@ -387,7 +387,8 @@ class account_ia_auth_callback(delegate.page):
 
     def GET(self):
         i = web.input(token="", ia_username="", next="/", remember="")
-        self.process_input(i)
+
+        self.process_input(i) 
 
         f = forms.Login()
         return self.render(i.ia_username, f, forms.NewAccount())
@@ -431,7 +432,7 @@ class account_ia_auth_callback(delegate.page):
                   displayname=displayname)
         account = accounts.find(username=i.username)
         account.activate()
-        account.link(i.ia_email)
+        account.set_ia_email(i.ia_email)
         self.setcookie(account, i.remember)            
         raise web.seeother(i.next)
 
