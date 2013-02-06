@@ -33,7 +33,9 @@ $else:
                 </th>
                 <th class="expires">$_("Loan Expires")</th>
                 <th class="what">$_("What")</th>
+                <!--
                 <th class="user">$_("Who")</th>
+                -->
                 <th>$_("Actions")</th>
             </tr>
         </thead>
@@ -72,11 +74,13 @@ $else:
                     $else:
                         $loan['resource_type']
                 </td>
+                <!--
                 <td class="user">
                     $# user = get_document(loan['user'])
                     $# <a href="$user.key">$user.name</a>
-                    <a href="$loan['user']">$loan['user']</a>
+                    $#<a href="$loan['user']">$loan['user']</a>
                 </td>
+                -->
                 <td class="action">
                     $ borrow_admin = loan['book'] + '/title/borrow_admin'
                     <a href="$borrow_admin">debug_info</a><br/><br/>
