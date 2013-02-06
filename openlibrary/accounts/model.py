@@ -132,11 +132,11 @@ class Account(web.storage):
         return ia_userid and ia.userid_to_username(ia_userid)
 
     def set_ia_email(self, ia_email):
-        ia_userid = ia.username_to_userid(ia_email)
+        ia_userid = ia_email and ia.username_to_userid(ia_email)
         self.set_ia_userid(ia_userid)
 
     def set_ia_userid(self, ia_userid):
-        self.ia_userid = ia_userid
+        self.ia_userid = ia_userid or None
         self._save()
 
     def get_ia_userid(self):
