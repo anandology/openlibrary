@@ -150,6 +150,9 @@ def verify_token(name, token):
     # token matched?
     return token == _sign_token(name, int(token_timestamp))
 
+class IAError(Exception):
+    pass
+
 def _internal_api(method, **kw):
     # take values in the sorted order of keys to compute token
     values = [kv[1] for kv in sorted(kw.items())]
@@ -164,7 +167,11 @@ def _internal_api(method, **kw):
     try:
         stats.begin("archive.org", url=url)
         jsontext = urllib.urlopen(url).read()
-        return simplejson.loads(jsontext)
+        d = simplejson.loads(jsontext)
+        if d.get("status") == 'fail':
+            raise IAError(d.get("message", "internal error"))
+        else:
+            return d
     finally:
         stats.end()
 

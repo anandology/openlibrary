@@ -119,7 +119,12 @@ class borrow(delegate.page):
                 raise web.seeother(error_redirect)
             
             if user_can_borrow_edition(user, edition, resource_type):
-                loan_link = self.make_offer(user.key, key, resource_type)
+                try:
+                    loan_link = self.make_offer(user.key, key, resource_type)
+                except ia.IAError:
+                    logger.error("Failed to borrow %s", edition.ocaid, exc_info=True)
+                    loans = user.get_loans(_cache="update")
+                    return render_template("borrow", edition, loans, has_returned_recently=False, borrow_failed=True)
 
                 if resource_type == 'bookreader':
                     stats.increment('loans.bookreader')

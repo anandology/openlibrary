@@ -1,4 +1,4 @@
-$def with (page, loans, has_returned_recently)
+$def with (page, loans, has_returned_recently, borrow_failed=False)
 
 $var title: $page.title
 
@@ -66,6 +66,12 @@ $if has_returned_recently and not page.key in [loan['book'] for loan in loans]:
                 </tbody>
             </table>
         </div>
+
+        $if borrow_failed:
+            <div class="message alert">
+                <h2 class="sansserif">Failed to borrow this title.</h2>
+                <p>Please try again after some time, or see other titles from <a href="/borrow">lending library</a>.</p>
+            </div>
 
         $if page.key in [loan['book'] for loan in loans] or page.ocaid in [loan['ocaid'] for loan in loans]:
             $# checked out by this user!
