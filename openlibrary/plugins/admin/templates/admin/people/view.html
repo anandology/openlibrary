@@ -177,17 +177,6 @@ $ has_profile = person.get_user() is not None
         </td>
     </tr>
     <tr>
-        <td>$:_("Internet Archive<br/>Username/Email Address:")</td>
-        <td>
-            <form method="POST" name="form-ia" id="form-ia" class="validate">
-                <input type="text" name="email" id="iaemail" class="email big" value="$input.get('email', person['email'])"/>
-                <button type="submit" name="action" value="update_ia_email">Change</button>
-                <span class="invalid" htmlfor="iaemail" generated="true">$errors.get("email")</span>
-            </form>
-        </td>
-    </tr>
-
-    <tr>
         <td>$_("Bot")</td>
         <td>
             $if has_profile:
@@ -244,7 +233,7 @@ $ has_profile = person.get_user() is not None
         <td>IA Username</td>
         <td>
             <form method="POST" name="form-ia" id="form-ia" class="validate">
-                <input type="text" name="ia_email" id="ia_email" class="email big" value="$input.get('ia_email', person.get('ia_email'))"/>
+                <input type="text" name="ia_email" id="ia_email" class="email big" value="$input.get('ia_email', person.get_ia_email())"/>
                 <button type="submit" name="action" value="update_ia_email">Change</button>
                 <span class="invalid" htmlfor="ia_email" generated="true">$errors.get("ia_email")</span>
             </form>
