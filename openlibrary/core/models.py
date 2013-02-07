@@ -381,10 +381,10 @@ class User(Thing):
     def get_loans(self, _cache=None):
         """Returns all loans of this user.
         """
-        ia_email = self.get_account().get_ia_email()
-        if not ia_email:
+        ia_userid = self.get_account().get_ia_userid()
+        if not ia_userid:
             return []
-        return ia.get_loans(ia_email, _cache=_cache)
+        return ia.get_user_loans(ia_userid, _cache=_cache)
 
     def get_loan_count(self):
         return len(self.get_loans())

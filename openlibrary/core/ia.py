@@ -168,23 +168,30 @@ def _internal_api(method, **kw):
         stats.begin("archive.org", url=url)
         jsontext = urllib.urlopen(url).read()
         d = simplejson.loads(jsontext)
-        if d.get("status") == 'fail':
-            raise IAError(d.get("message", "internal error"))
-        else:
-            return d
+    except Exception, e:
+        logger.error("Failed to make archive.org API request. %s", url, exc_info=True)
+        raise IAError(str(e))
     finally:
         stats.end()
 
-@cache.memoize(engine="memcache", key=lambda username: "user-loans-%s" % username, expires=60)
-def get_loans(username):
+    if d.get("status") == 'fail':
+        raise IAError(d.get("message", "internal error"))
+    else:
+        return d
+
+@cache.memoize(engine="memcache", key=lambda ia_userid: "user-loans-%s" % ia_userid, expires=60)
+def get_user_loans(ia_userid):
     """Returns loans of the archive.org user identified bu the username.
 
     This uses the archive.org internal API to get this info.
     """
-    data = _internal_api(method="get_loans", username=username)
+    try:
+        data = _internal_api(method="get_loans", userid=ia_userid)
+    except IAError:
+        data = {}
     
     # create loan objects
-    loans = [Loan(d) for d in data["loans"]]
+    loans = [Loan(d) for d in data.get("loans", [])]
 
     # consider only the ones which have a valid OL key
     # This can happen when the book is not loaded to openlibrary
@@ -193,13 +200,18 @@ def get_loans(username):
 
 @cache.memoize(engine="memcache", key=lambda identifier: "book-loans-%s" % identifier, expires=60)
 def get_loans_of_book(identifier):
-    data = _internal_api(
-        method="loan_status", 
-        identifier=identifier)
-    return data['loans']
+    try:
+        data = _internal_api(
+            method="loan_status", 
+            identifier=identifier)
+        return data['loans']
+    except IAError:
+        return []
 
 def borrow(username, identifier, resource_type):
-    """Borrows a book via archive.org internal API.    
+    """Borrows a book via archive.org internal API.   
+
+    Raises IAError if borrow operation fails.
     """
     data = _internal_api(
         method="borrow", 
