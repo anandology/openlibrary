@@ -411,13 +411,30 @@ class account_ia_auth_callback(delegate.page):
 
     def POST_link(self, i):
         f = forms.Login()
-        if f.validates(i):
-            account = accounts.find(i.username)
+        if not f.validates(i):
+            return self.render(i.ia_email, f, forms.NewAccount())
+
+        account = accounts.find(i.username)
+        if not account:
+            f.note = utils.get_error("account_user_notfound")
+            return self.render(i.ia_email, f, forms.NewAccount())
+
+        status = account.login(i.password)
+        if status == 'ok':
             account.set_ia_email(i.ia_email)
             self.setcookie(account, i.remember)
             raise web.seeother(i.next)
+        elif status == "account_not_verified":
+            return render_template("account/not_verified", username=account.username, password=i.password, email=account.email)
+        elif status == "account_not_found":
+            f.note = utils.get_error("account_user_notfound")
+            return self.render(i.ia_email, f, forms.NewAccount())
+        elif status == "account_blocked":
+            f.note = utils.get_error("account_blocked")
+            return self.render(i.ia_email, f, forms.NewAccount())
         else:
-            return self.render(f, i.ia_email)
+            f.note = utils.get_error("account_incorrect_password")
+            return self.render(i.ia_email, f, forms.NewAccount())
 
     def POST_new_account(self, i):
         displayname = ia.get_account_details(i.ia_email).get('screenname') or i.username
@@ -440,8 +457,8 @@ class account_ia_auth_callback(delegate.page):
         # for POST requests, we'll have ia_email
         # and for GET requests, we'll have username
         ia_email = i.get("ia_email") or i.get("ia_username")
-
-        if not ia.verify_token(ia_email, i.token):
+        token = i.get("new_token") or i.token
+        if not ia.verify_token(ia_email, token):
             # Invalid token. Try login again.
             return account_login().redirect(i.next)
 

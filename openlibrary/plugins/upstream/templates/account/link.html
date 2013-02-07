@@ -59,7 +59,7 @@ $var title: $("Link Your Open Library Account")
             <input value="$_('Link Account')" type="submit" name="login" title="$_('Log In')"/>
             <input type="hidden" name="action" value="link"/>
             <input type="hidden" name="ia_email" value="$ia_email"/>
-            <input type="hidden" name="token" value="$token"/>            
+            <input type="hidden" name="new_token" value="$token"/>            
         </div>
         <div class="formElement">
             <div class="input smaller">$:_('<a href="/account/password/forgot">Forgotten your username or password</a>?')
@@ -75,14 +75,16 @@ $var title: $("Link Your Open Library Account")
         <form id="login" class="login olform" name="register" method="post">
         
             $if form2.note:
-                <div class="note">$form2.note</div>        
+                <div class="note">$form2.note</div> 
+            $elif form2.username.note:
+                <div class="note">$form2.username.note</div>
 
             <div class="formElement">
                 <div class="label"><label for="username">$_("Username")</label> <span class="smaller lighter">Letters and numbers only please, and at least 3 characters.</span></div>
 
                 <div class="input">
                     <input type="text" class="required small" id="username" name="username" value="$(form2.username.value)" autocapitalize="off" autocorrect="off"/>
-                    <span class="invalid clearfix" htmlfor="username">$form2.username.note</span>
+                    <br/>
                     <div class="sansserif smaller lighter">
                         Your URL: http://openlibrary.org/people/<span id="userUrl">username</span>
                     </div>
@@ -92,7 +94,7 @@ $var title: $("Link Your Open Library Account")
                     <input value="$_('Select Username')" type="submit" name="submit" title="$_('Select Open Library Username')"/>
                     <input type="hidden" name="action" value="new-account"/>
                     <input type="hidden" name="ia_email" value="$ia_email"/>
-                    <input type="hidden" name="token" value="$token"/>
+                    <input type="hidden" name="new_token" value="$token"/>
                 </div>                
             </div>
         </form>
