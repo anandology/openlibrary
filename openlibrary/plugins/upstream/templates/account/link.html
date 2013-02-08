@@ -2,11 +2,6 @@ $def with (form1, form2, ia_email, token)
 
 $var title: $("Link Your Open Library Account")
 
-<div id="contentHead">
-    <h1>$_("Link Your Account")</h1>
-    <div class="small sansserif grey">You are logged in as <b>$ia_email</b>.</div>
-</div>
-
 <style type="text/css">
     .half {
         width: 420px;
@@ -26,7 +21,25 @@ $var title: $("Link Your Open Library Account")
 });
 </script>
 
+<div id="contentHead">
+    <h1>$_("Link Your Account")</h1>
+    <div class="small sansserif grey">You are logging in as <b>$ia_email</b>.</div>
+</div>
+
 <div id="contentBody">
+
+    <div class="message" style="border: 1px solid #eeedbd">
+        <div style="padding: 20px;">
+            <div>
+                <b>Please link your Internet Archive account to Open Library.</b>
+            </div>
+            <br/>
+            <div>
+                Once you link your account, you'll be able to use Open Library as before.
+            </div>
+
+        </div>
+    </div>
 
     <div class="half" style="border-right: 1px solid #ddd; padding-right: 20px; margin-right: 20px;">
         <p><strong>Existing member of Open Library?</strong></p>
@@ -35,7 +48,7 @@ $var title: $("Link Your Open Library Account")
     <form id="login" class="login olform" name="register" method="post">
         
         $if form1.note:
-            <div class="note">$form1.note</div>        
+            <div class="note">$:form1.note</div>        
 
         <div class="formElement">
             <div class="label"><label for="ol-username">$_("Open Library Username")</label> <span class="smaller lighter"></span></div>
@@ -75,9 +88,9 @@ $var title: $("Link Your Open Library Account")
         <form id="login" class="login olform" name="register" method="post">
         
             $if form2.note:
-                <div class="note">$form2.note</div> 
+                <div class="note">$:form2.note</div> 
             $elif form2.username.note:
-                <div class="note">$form2.username.note</div>
+                <div class="note">$:form2.username.note</div>
 
             <div class="formElement">
                 <div class="label"><label for="username">$_("Username")</label> <span class="smaller lighter">Letters and numbers only please, and at least 3 characters.</span></div>
@@ -100,8 +113,10 @@ $var title: $("Link Your Open Library Account")
         </form>
     </div>
     <div class="clearfix"></div>
+    <!--
     <p class="help smaller" style="margin-top:50px;border-topx:1px dotted #615132;padding-top:10px;">
         <strong>Need help?</strong> Head for the <a title="Open link in a new browser window" target="newWindow" href="/help/faq/account">Account FAQ</a>.
     </p>
+    -->
 
 </div>
