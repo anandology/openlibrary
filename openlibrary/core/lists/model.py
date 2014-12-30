@@ -4,7 +4,6 @@ from collections import defaultdict
 import re
 import urllib, urllib2
 
-import couchdb
 import simplejson
 import web
 import logging
@@ -107,7 +106,7 @@ class ListMixin:
         }
         # TODO
         # We should be able to get the editions from solr and return that.
-        # Might be an issue of the total number of editions is too big, but
+        # Might be an issue of the total number of editions is too big, but 
         # that isn't the case for most lists.
             
     def get_all_editions(self):
@@ -286,7 +285,7 @@ class ListMixin:
         from openlibrary.core.models import Image
         cover_id = self._get_default_cover_id()
         return Image(self._site, 'b', cover_id)
-
+                        
 def valuesort(d):
     """Sorts the keys in the dictionary based on the values.
     """
